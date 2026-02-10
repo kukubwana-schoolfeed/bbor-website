@@ -18,11 +18,14 @@ export default function Home() {
 
   useEffect(() => {
     // Hero fade-in animation
-    gsap.fromTo(
-      heroRef.current?.querySelector('.hero-content'),
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }
-    )
+    const heroContent = heroRef.current?.querySelector('.hero-content')
+    if (heroContent) {
+      gsap.fromTo(
+        heroContent,
+        { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 1.2, ease: 'power3.out' }
+      )
+    }
 
     // Impact counters animation
     const impactNumbers = document.querySelectorAll('.impact-number')
