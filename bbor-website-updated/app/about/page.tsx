@@ -15,20 +15,23 @@ export default function About() {
   const testimonialsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    gsap.fromTo(
-      testimonialsRef.current?.querySelectorAll('.testimonial-card'),
-      { opacity: 0, y: 50 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        stagger: 0.2,
-        scrollTrigger: {
-          trigger: testimonialsRef.current,
-          start: 'top 80%',
-        },
-      }
-    )
+    const cards = testimonialsRef.current?.querySelectorAll('.testimonial-card')
+    if (cards && cards.length > 0) {
+      gsap.fromTo(
+        cards,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          stagger: 0.2,
+          scrollTrigger: {
+            trigger: testimonialsRef.current,
+            start: 'top 80%',
+          },
+        }
+      )
+    }
   }, [])
 
   const testimonials = [
