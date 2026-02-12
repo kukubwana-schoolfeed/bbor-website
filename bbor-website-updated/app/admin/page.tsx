@@ -846,12 +846,11 @@ export default function AdminPage() {
                     <button onClick={() => handleDeleteCause(cause.id)} className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm">Delete</button>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         )}
-
-        {/* Continue with NEWS, STORIES, FAQS, IMAGES tabs... */}
 
         {activeTab === 'news' && (
           <div>
