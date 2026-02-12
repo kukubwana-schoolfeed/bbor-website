@@ -129,27 +129,40 @@ export default function AdminPage() {
   useEffect(() => {
     const token = getToken()
     if (token) {
+      // ALWAYS verify token with backend, don't trust localStorage
       verifyToken(token)
     } else {
+      setIsLoggedIn(false)
       setIsLoading(false)
     }
   }, [])
 
   const verifyToken = async (token: string) => {
+    setIsLoading(true)
     try {
       const res = await fetch(`${API_URL}/api/auth/verify`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
       if (res.ok) {
-        setIsLoggedIn(true)
-        loadAllData(token)
+        const data = await res.json()
+        if (data.user) {
+          setIsLoggedIn(true)
+          loadAllData(token)
+        } else {
+          // Invalid response, force logout
+          localStorage.removeItem('adminToken')
+          setIsLoggedIn(false)
+        }
       } else {
+        // Token invalid or expired, force logout
         localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
       }
     } catch (error) {
       console.error('Token verification failed:', error)
       localStorage.removeItem('adminToken')
+      setIsLoggedIn(false)
     } finally {
       setIsLoading(false)
     }
@@ -342,13 +355,30 @@ export default function AdminPage() {
 
   // STORY HANDLERS
   const handleSaveStory = async () => {
-    if (!storyForm.name || !storyForm.story || !storyForm.imageUrl) {
-      alert('Please fill in all fields including image')
+    // Better validation with specific error messages
+    if (!storyForm.name) {
+      alert('❌ Error: Please enter the child\'s name')
+      return
+    }
+    if (!storyForm.story) {
+      alert('❌ Error: Please write their story')
+      return
+    }
+    if (!storyForm.imageUrl) {
+      alert('❌ Error: Please upload a photo of the child')
       return
     }
 
+    console.log('Saving story:', storyForm) // Debug log
+
     try {
       const token = getToken()
+      if (!token) {
+        alert('❌ Session expired. Please login again.')
+        handleLogout()
+        return
+      }
+
       const data = {
         name: storyForm.name,
         story: storyForm.story,
@@ -356,6 +386,8 @@ export default function AdminPage() {
         status: storyForm.status,
         order: storyForm.order
       }
+
+      console.log('Sending to API:', data) // Debug log
 
       const res = editingStory
         ? await fetch(`${API_URL}/api/stories/${editingStory.id}`, {
@@ -369,14 +401,24 @@ export default function AdminPage() {
             body: JSON.stringify(data)
           })
 
+      console.log('API Response status:', res.status) // Debug log
+
       if (res.ok) {
+        const savedStory = await res.json()
+        console.log('Story saved successfully:', savedStory) // Debug log
+        alert('✅ Story saved successfully!')
         loadAllData(token!)
         setShowStoryForm(false)
         setEditingStory(null)
         setStoryForm({ name: '', story: '', imageUrl: '', status: 'Active', order: 1 })
+      } else {
+        const errorText = await res.text()
+        console.error('API Error:', errorText) // Debug log
+        alert(`❌ Failed to save story. Server error: ${res.status}`)
       }
     } catch (error) {
-      alert('Failed to save story')
+      console.error('Save story error:', error) // Debug log
+      alert('❌ Failed to save story. Check console for details.')
     }
   }
 

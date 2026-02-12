@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import BottomSection from '@/components/BottomSection'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 type FAQ = {
   id: number
@@ -10,100 +11,94 @@ type FAQ = {
   answer: string
   category: string
   order: number
-  status: 'Active' | 'Inactive'
+  status: string
 }
 
 export default function FAQPage() {
-  // Mock FAQs (will come from database later)
-  const faqs: FAQ[] = [
-    { id: 1, question: 'How do I donate?', answer: 'You can donate through our secure payment gateway using your credit/debit card or mobile money. Simply click the "Donate Now" button and follow the instructions.', category: 'Donations', order: 1, status: 'Active' },
-    { id: 2, question: 'Is my donation tax-deductible?', answer: 'Yes, BBOR is a registered charity organization and all donations are tax-deductible. You will receive a receipt for your donation.', category: 'Donations', order: 2, status: 'Active' },
-    { id: 3, question: 'Can I donate monthly?', answer: 'Absolutely! We encourage monthly donations as they help us plan better for the children\'s needs. You can set up recurring donations during checkout.', category: 'Donations', order: 3, status: 'Active' },
-    { id: 4, question: 'How are funds used?', answer: 'Funds go directly to supporting orphaned and vulnerable children with food, shelter, education, healthcare, and vocational training. We maintain full transparency in our financial reporting.', category: 'About', order: 1, status: 'Active' },
-    { id: 5, question: 'Where is BBOR located?', answer: 'BBOR is located in Lusaka, Zambia. We currently support 230 children at our facility.', category: 'About', order: 2, status: 'Active' },
-    { id: 6, question: 'How can I volunteer?', answer: 'We welcome volunteers! Please contact us via email at bborzambia@gmail.com or WhatsApp at +260 973 158 210 to discuss volunteer opportunities.', category: 'Volunteering', order: 1, status: 'Active' },
-    { id: 7, question: 'Can I sponsor a specific child?', answer: 'Yes! We offer child sponsorship programs. Contact us directly to learn more about sponsoring a specific child and their needs.', category: 'Sponsorship', order: 1, status: 'Active' },
-    { id: 8, question: 'What payment methods do you accept?', answer: 'We accept credit/debit cards (Visa, Mastercard) and Zambian mobile money (Airtel Money, MTN MoMo, Zamtel Kwacha).', category: 'Donations', order: 4, status: 'Active' },
-  ]
+  const [faqs, setFaqs] = useState<FAQ[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
 
-  const activeFaqs = faqs.filter(f => f.status === 'Active').sort((a, b) => a.order - b.order)
-  const categories = [...new Set(activeFaqs.map(f => f.category))]
+  useEffect(() => {
+    loadFAQs()
+  }, [])
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('All')
-  const [openFaqId, setOpenFaqId] = useState<number | null>(null)
+  const loadFAQs = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/faqs?status=Active`)
+      if (res.ok) {
+        const data = await res.json()
+        setFaqs(data.sort((a: FAQ, b: FAQ) => a.order - b.order))
+      }
+    } catch (error) {
+      console.error('Failed to load FAQs:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
+  const categories = ['All', ...Array.from(new Set(faqs.map(faq => faq.category)))]
   const filteredFaqs = selectedCategory === 'All' 
-    ? activeFaqs 
-    : activeFaqs.filter(f => f.category === selectedCategory)
+    ? faqs 
+    : faqs.filter(faq => faq.category === selectedCategory)
 
-  const toggleFaq = (id: number) => {
-    setOpenFaqId(openFaqId === id ? null : id)
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Loading FAQs...</div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen pt-20">
-      <WhatsAppButton />
-
-      {/* Hero Section */}
-      <section className="relative h-96 bg-gradient-to-br from-primary to-primary-dark text-white flex items-center">
-        <div className="max-w-7xl mx-auto px-4 w-full">
+    <div className="min-h-screen pt-20 bg-gray-50">
+      {/* Header */}
+      <section className="bg-gradient-to-r from-primary to-primary-dark py-20">
+        <div className="max-w-4xl mx-auto px-4 text-center text-white">
           <h1 className="text-5xl font-bold mb-4">Frequently Asked Questions</h1>
-          <p className="text-xl opacity-90">
-            Find answers to common questions about BBOR and how you can help
-          </p>
+          <p className="text-xl">Find answers to common questions about BBOR</p>
         </div>
       </section>
 
-      {/* FAQ Content */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4">
-          
-          {/* Category Filter */}
-          <div className="mb-12 flex flex-wrap gap-3 justify-center">
+      {/* Category Filter */}
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex flex-wrap gap-3 justify-center mb-8">
+          {categories.map(category => (
             <button
-              onClick={() => setSelectedCategory('All')}
-              className={`px-6 py-3 rounded-full font-semibold transition-all ${
-                selectedCategory === 'All'
-                  ? 'bg-primary text-white shadow-lg'
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-2 rounded-full font-semibold transition ${
+                selectedCategory === category
+                  ? 'bg-primary text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-100'
               }`}
             >
-              All Questions
+              {category}
             </button>
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-3 rounded-full font-semibold transition-all ${
-                  selectedCategory === category
-                    ? 'bg-primary text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+          ))}
+        </div>
 
-          {/* FAQ Accordion */}
+        {/* FAQs */}
+        {filteredFaqs.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg shadow">
+            <p className="text-gray-500 text-lg">No FAQs found in this category</p>
+          </div>
+        ) : (
           <div className="space-y-4">
             {filteredFaqs.map((faq, index) => (
               <div key={faq.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <button
-                  onClick={() => toggleFaq(faq.id)}
-                  className="w-full px-6 py-5 flex justify-between items-center hover:bg-gray-50 transition"
+                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                  className="w-full px-6 py-5 text-left flex justify-between items-center hover:bg-gray-50 transition"
                 >
-                  <div className="flex items-start text-left gap-4">
-                    <span className="text-primary font-bold text-lg flex-shrink-0">
-                      Q{index + 1}.
-                    </span>
-                    <span className="text-lg font-semibold text-black">
-                      {faq.question}
-                    </span>
+                  <div className="flex-1">
+                    <span className="text-primary font-bold mr-3">Q.</span>
+                    <span className="text-lg font-semibold text-gray-900">{faq.question}</span>
                   </div>
                   <svg
-                    className={`w-6 h-6 text-primary flex-shrink-0 transition-transform ${
-                      openFaqId === faq.id ? 'transform rotate-180' : ''
+                    className={`w-6 h-6 text-primary transition-transform ${
+                      openIndex === index ? 'rotate-180' : ''
                     }`}
                     fill="none"
                     stroke="currentColor"
@@ -112,67 +107,46 @@ export default function FAQPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
-                
-                {openFaqId === faq.id && (
-                  <div className="px-6 pb-5 pt-2 animate-fadeIn">
-                    <div className="ml-10 text-gray-700 leading-relaxed">
-                      {faq.answer}
-                    </div>
+                {openIndex === index && (
+                  <div className="px-6 py-5 bg-gray-50 border-t">
+                    <p className="text-gray-700 leading-relaxed">{faq.answer}</p>
                   </div>
                 )}
               </div>
             ))}
           </div>
+        )}
+      </div>
 
-          {filteredFaqs.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-xl text-gray-500">No questions found in this category</p>
-            </div>
-          )}
-
-          {/* Contact CTA */}
-          <div className="mt-16 bg-white rounded-lg shadow-xl p-8 text-center">
-            <h3 className="text-2xl font-bold mb-4 text-black">Still have questions?</h3>
-            <p className="text-gray-600 mb-6">
-              We're here to help! Reach out to us and we'll get back to you as soon as possible.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="https://wa.me/260973158210"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3 rounded-lg transition"
-              >
-                WhatsApp Us
-              </a>
-              <a
-                href="mailto:bborzambia@gmail.com"
-                className="bg-primary hover:bg-primary-dark text-white font-semibold px-8 py-3 rounded-lg transition"
-              >
-                Email Us
-              </a>
-            </div>
+      {/* Contact CTA */}
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="bg-primary text-white rounded-lg p-8 text-center">
+          <h2 className="text-3xl font-bold mb-4">Still have questions?</h2>
+          <p className="text-xl mb-6">We're here to help!</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="https://wa.me/260979360155"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-500 hover:bg-green-600 text-white font-bold px-8 py-3 rounded-full transition inline-flex items-center justify-center gap-2"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+              </svg>
+              WhatsApp Us
+            </a>
+            <a
+              href="mailto:info@bbor.org"
+              className="bg-white hover:bg-gray-100 text-primary font-bold px-8 py-3 rounded-full transition inline-flex items-center justify-center gap-2"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Email Us
+            </a>
           </div>
         </div>
-      </section>
-
-      <BottomSection />
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-      `}</style>
+      </div>
     </div>
   )
 }
