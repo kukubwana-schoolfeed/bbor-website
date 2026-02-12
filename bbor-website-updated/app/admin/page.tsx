@@ -127,14 +127,10 @@ export default function AdminPage() {
   const getToken = () => localStorage.getItem('adminToken')
 
   useEffect(() => {
-    const token = getToken()
-    if (token) {
-      // ALWAYS verify token with backend, don't trust localStorage
-      verifyToken(token)
-    } else {
-      setIsLoggedIn(false)
-      setIsLoading(false)
-    }
+    // FORCE LOGOUT - Always require password
+    localStorage.removeItem('adminToken')
+    setIsLoggedIn(false)
+    setIsLoading(false)
   }, [])
 
   const verifyToken = async (token: string) => {
