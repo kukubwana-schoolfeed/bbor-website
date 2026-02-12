@@ -818,7 +818,14 @@ export default function AdminPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {causes.map(cause => (
+              {causes.length === 0 ? (
+                <div className="col-span-3 text-center py-12 bg-white rounded-lg shadow">
+                  <p className="text-gray-500 text-lg mb-2">No causes added yet</p>
+                  <p className="text-sm text-gray-400 mb-4">Click "Add Cause" to create your first donation cause</p>
+                  <p className="text-xs text-gray-400">Or run the database seed to populate with default causes</p>
+                </div>
+              ) : (
+                causes.map(cause => (
                 <div key={cause.id} className="bg-white rounded-lg shadow-lg p-6">
                   {cause.imageUrl ? (
                     <img src={cause.imageUrl} alt={cause.name} className="w-full h-40 object-cover rounded-lg mb-4" />
@@ -1134,12 +1141,16 @@ export default function AdminPage() {
           <div>
             <div className="mb-6">
               <h2 className="text-2xl font-bold mb-4">Site Images</h2>
+              <p className="text-gray-600 mb-4">Manage images used throughout the website. Click "Replace Image" to update any image.</p>
               <select value={selectedPage} onChange={(e) => setSelectedPage(e.target.value)}
-                className="px-4 py-3 border rounded-lg">
-                <option value="All">All Pages</option>
+                className="px-4 py-3 border rounded-lg bg-white">
+                <option value="All">All Pages ({images.length} images)</option>
                 <option value="Home">Home Page</option>
                 <option value="About">About Page</option>
                 <option value="Gallery">Gallery Page</option>
+                <option value="Contact">Contact Page</option>
+                <option value="Donate">Donate Page</option>
+                <option value="News">News Page</option>
               </select>
             </div>
 
@@ -1175,20 +1186,27 @@ export default function AdminPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredImages.map(img => (
-                <div key={img.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                  <img src={img.currentUrl} alt={img.description} className="w-full h-48 object-cover" />
-                  <div className="p-4">
-                    <p className="text-sm text-primary mb-1">{img.page}</p>
-                    <h3 className="font-bold mb-1">{img.location}</h3>
-                    <p className="text-sm text-gray-600 mb-4">{img.description}</p>
-                    <button onClick={() => setEditingImage(img)}
-                      className="w-full bg-primary text-white py-2 rounded-lg font-semibold">
-                      Replace Image
-                    </button>
-                  </div>
+              {filteredImages.length === 0 ? (
+                <div className="col-span-3 text-center py-12 bg-white rounded-lg shadow">
+                  <p className="text-gray-500 text-lg mb-2">No images found for this page</p>
+                  <p className="text-sm text-gray-400">Images will appear here after running the database seed</p>
                 </div>
-              ))}
+              ) : (
+                filteredImages.map(img => (
+                  <div key={img.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <img src={img.currentUrl} alt={img.description} className="w-full h-48 object-cover" />
+                    <div className="p-4">
+                      <p className="text-sm text-primary mb-1">{img.page}</p>
+                      <h3 className="font-bold mb-1">{img.location}</h3>
+                      <p className="text-sm text-gray-600 mb-4">{img.description}</p>
+                      <button onClick={() => setEditingImage(img)}
+                        className="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary-dark transition">
+                        Replace Image
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}
