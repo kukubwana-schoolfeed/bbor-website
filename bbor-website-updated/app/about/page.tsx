@@ -1,42 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import BottomSection from '@/components/BottomSection'
 import WhatsAppButton from '@/components/WhatsAppButton'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-
-type Story = {
-  id: number
-  name: string
-  story: string
-  imageUrl: string
-  status: string
-}
-
 export default function About() {
-  const [stories, setStories] = useState<Story[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadStories()
-  }, [])
-
-  const loadStories = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/stories?status=Active`)
-      if (res.ok) {
-        const data = await res.json()
-        setStories(data)
-      }
-    } catch (error) {
-      console.error('Failed to load stories:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen pt-20">
       <WhatsAppButton />
@@ -167,32 +135,6 @@ export default function About() {
           </div>
         </div>
       </section>
-
-      {/* Orphan Stories - DYNAMIC FROM DATABASE */}
-      {loading ? (
-        <section className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <p className="text-gray-600 text-lg">Loading orphan stories...</p>
-          </div>
-        </section>
-      ) : stories.length > 0 && (
-        <section className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-4xl font-bold text-center mb-16 text-black">Orphan Stories</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {stories.map(story => (
-                <div key={story.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition">
-                  <img src={story.imageUrl} alt={story.name} className="w-full h-64 object-cover" />
-                  <div className="p-6">
-                    <h3 className="text-2xl font-bold mb-3 text-black">{story.name}</h3>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">{story.story}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Challenges & Future */}
       <section className="py-20 bg-gray-50">
