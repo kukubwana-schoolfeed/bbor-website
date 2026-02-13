@@ -1,17 +1,51 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import BottomSection from '@/components/BottomSection'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import DynamicImage from '@/components/DynamicImage'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+
+type AlbumPreview = {
+  location: string
+  imageUrl: string
+}
 
 export default function Gallery() {
   const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
+  const [albumPreviews, setAlbumPreviews] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadAlbumPreviews()
+  }, [])
+
+  const loadAlbumPreviews = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/images?page=Gallery`)
+      if (res.ok) {
+        const images = await res.json()
+        const previews: Record<string, string> = {}
+        images.forEach((img: AlbumPreview) => {
+          // Extract album ID from location like "Celebrations Album Cover"
+          const albumId = img.location.replace(' Album Cover', '').toLowerCase().replace(/\s+/g, '-')
+          previews[albumId] = img.imageUrl
+        })
+        setAlbumPreviews(previews)
+      }
+    } catch (error) {
+      console.error('Failed to load album previews:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Define all 12 albums with images
   const albums = [
     {
-      id: 'building',
+      id: 'building-project',
       name: 'BBOR Building Project',
       preview: '/images/gallery/Bbor_building_project.png',
       images: Array.from({ length: 13 }, (_, i) => 
@@ -196,38 +230,65 @@ export default function Gallery() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-16 text-black">Photo Albums</h2>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {albums.map((album) => (
-              <div
-                key={album.id}
-                className="album-card group relative bg-white rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
-                onClick={() => setSelectedAlbum(album.id)}
-              >
-                <div className="relative h-80">
-                  <Image
-                    src={album.preview}
-                    alt={album.name}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                  
-                  {/* Album name overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="text-2xl font-bold text-white mb-2">{album.name}</h3>
-                    <p className="text-white/80 text-sm">{album.images.length} photos</p>
-                  </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Loading albums...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {albums.map((album) => {
+                const dynamicPreview = albumPreviews[album.id]
+                
+                return (
+                  <div
+                    key={album.id}
+                    className="album-card group relative bg-white rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                    onClick={() => setSelectedAlbum(album.id)}
+                  >
+                    <div className="relative h-80">
+                      {dynamicPreview ? (
+                        dynamicPreview.startsWith('data:image') ? (
+                          <img
+                            src={dynamicPreview}
+                            alt={album.name}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        ) : (
+                          <Image
+                            src={dynamicPreview}
+                            alt={album.name}
+                            fill
+                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                        )
+                      ) : (
+                        <Image
+                          src={album.preview}
+                          alt={album.name}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                      
+                      {/* Album name overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h3 className="text-2xl font-bold text-white mb-2">{album.name}</h3>
+                        <p className="text-white/80 text-sm">{album.images.length} photos</p>
+                      </div>
 
-                  {/* See More button on hover */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="see-more-btn">
-                      <span>See More</span>
-                    </button>
+                      {/* See More button on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button className="see-more-btn">
+                          <span>See More</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 
