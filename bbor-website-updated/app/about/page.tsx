@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import BottomSection from '@/components/BottomSection'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import DynamicImage from '@/components/DynamicImage'
 
 export default function About() {
   return (
@@ -11,8 +12,9 @@ export default function About() {
 
       {/* Hero Section */}
       <section className="relative h-96 overflow-hidden group">
-        <Image
-          src="/images/IMG-20230715-WA0004.png"
+        <DynamicImage
+          page="About"
+          location="Hero Background"
           alt="BBOR Graduation"
           fill
           className="object-cover transition-transform duration-700 group-hover:scale-110"
@@ -55,8 +57,9 @@ export default function About() {
               </p>
             </div>
             <div className="relative h-96 rounded-lg overflow-hidden shadow-2xl">
-              <Image
-                src="/images/IMG-20240924-WA0031-300x300.png"
+              <DynamicImage
+                page="About"
+                location="Who We Are Section"
                 alt="BBOR Team"
                 fill
                 className="object-cover"

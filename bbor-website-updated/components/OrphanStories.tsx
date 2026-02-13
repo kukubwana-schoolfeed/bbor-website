@@ -14,6 +14,7 @@ type Story = {
 export default function OrphanStories() {
   const [stories, setStories] = useState<Story[]>([])
   const [loading, setLoading] = useState(true)
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   useEffect(() => {
     loadStories()
@@ -31,6 +32,10 @@ export default function OrphanStories() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleExpand = (id: number) => {
+    setExpandedId(expandedId === id ? null : id)
   }
 
   if (loading) {
@@ -59,7 +64,7 @@ export default function OrphanStories() {
           {stories.map((story, index) => (
             <div
               key={story.id}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+              className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="relative h-80">
@@ -74,27 +79,21 @@ export default function OrphanStories() {
               </div>
 
               <div className="p-6">
-                <p className="text-gray-700 leading-relaxed line-clamp-4">
+                <p className={`text-gray-700 leading-relaxed whitespace-pre-line ${
+                  expandedId === story.id ? '' : 'line-clamp-4'
+                }`}>
                   {story.story}
                 </p>
-                <a
-                  href="/about"
+                
+                <button
+                  onClick={() => toggleExpand(story.id)}
                   className="inline-block mt-4 text-primary font-semibold hover:underline"
                 >
-                  Read Full Story →
-                </a>
+                  {expandedId === story.id ? 'Show Less ↑' : 'Read Full Story →'}
+                </button>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="text-center mt-12">
-          <a
-            href="/about"
-            className="inline-block bg-primary hover:bg-primary-dark text-white font-bold text-lg px-12 py-4 rounded-full transition-all duration-300 hover:scale-105 shadow-lg"
-          >
-            Read More Stories
-          </a>
         </div>
       </div>
     </section>

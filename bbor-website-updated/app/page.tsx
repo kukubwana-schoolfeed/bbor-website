@@ -10,6 +10,7 @@ import OrphanStories from '@/components/OrphanStories'
 import HomeNewsSection from '@/components/HomeNewsSection'
 import BottomSection from '@/components/BottomSection'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import DynamicImage from '@/components/DynamicImage'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -76,8 +77,9 @@ export default function Home() {
       {/* Hero Section - Graduation Photo */}
       <section ref={heroRef} className="scroll-section relative min-h-screen flex items-center justify-center bg-white">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/IMG-20230715-WA0004.png"
+          <DynamicImage
+            page="Home"
+            location="Hero Background"
             alt="BBOR Graduation"
             fill
             className="object-cover opacity-30"
@@ -139,8 +141,9 @@ export default function Home() {
       {/* Impact Section with Background */}
       <section className="scroll-section relative py-32">
         <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/IMG-20240925-WA0234-300x300.png"
+          <DynamicImage
+            page="Home"
+            location="Impact Section Background"
             alt="Children eating"
             fill
             className="object-cover"
@@ -211,8 +214,9 @@ export default function Home() {
       {/* Empowering Futures Section */}
       <section className="scroll-section relative py-32">
         <div className="absolute inset-0 z-0 group">
-          <Image
-            src="/images/IMG-20230715-WA0004.png"
+          <DynamicImage
+            page="Home"
+            location="Empowering Futures Background"
             alt="Graduation - Empowering Futures"
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-110"
