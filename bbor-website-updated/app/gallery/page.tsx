@@ -1,172 +1,95 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import BottomSection from '@/components/BottomSection'
 import WhatsAppButton from '@/components/WhatsAppButton'
-import DynamicImage from '@/components/DynamicImage'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-type AlbumPreview = {
-  location: string
+type Album = {
+  id: number
+  name: string
+  description: string | null
+  coverImage: string
+  status: string
+  photos: AlbumPhoto[]
+}
+
+type AlbumPhoto = {
+  id: number
   imageUrl: string
+  caption: string | null
 }
 
 export default function Gallery() {
-  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
-  const [albumPreviews, setAlbumPreviews] = useState<Record<string, string>>({})
+  const [albums, setAlbums] = useState<Album[]>([])
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadAlbumPreviews()
+    loadAlbums()
   }, [])
 
-  const loadAlbumPreviews = async () => {
+  const loadAlbums = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/images?page=Gallery`)
+      const res = await fetch(`${API_URL}/api/albums?status=Active`)
       if (res.ok) {
-        const images = await res.json()
-        const previews: Record<string, string> = {}
-        images.forEach((img: AlbumPreview) => {
-          // Extract album ID from location like "Celebrations Album Cover"
-          const albumId = img.location.replace(' Album Cover', '').toLowerCase().replace(/\s+/g, '-')
-          previews[albumId] = img.imageUrl
-        })
-        setAlbumPreviews(previews)
+        setAlbums(await res.json())
       }
     } catch (error) {
-      console.error('Failed to load album previews:', error)
+      console.error('Failed to load albums:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  // Define all 12 albums with images
-  const albums = [
-    {
-      id: 'building-project',
-      name: 'BBOR Building Project',
-      preview: '/images/gallery/Bbor_building_project.png',
-      images: Array.from({ length: 13 }, (_, i) => 
-        i === 0 ? '/images/gallery/Bbor_building_project.png' : `/images/gallery/Bbor_building_project${i}.png`
-      ),
-    },
-    {
-      id: 'tours',
-      name: 'BBOR Tours',
-      preview: '/images/gallery/Bbor_tours.png',
-      images: Array.from({ length: 24 }, (_, i) => {
-        if (i === 0) return '/images/gallery/Bbor_tours.png'
-        if (i < 18) return `/images/gallery/Bbor_tours${i}.png`
-        return `/images/gallery/Bbor_tours${i + 1}.png`
-      }),
-    },
-    {
-      id: 'celebrations',
-      name: 'BBOR Celebrations',
-      preview: '/images/gallery/BBOR_celebrations.png',
-      images: Array.from({ length: 30 }, (_, i) => {
-        if (i === 0) return '/images/gallery/BBOR_celebrations.png'
-        return `/images/gallery/BBOR_celebrations_${i + 1}.png`
-      }),
-    },
-    {
-      id: 'graduation',
-      name: 'BBOR Graduation',
-      preview: '/images/gallery/Bbor_graduation_5.png',
-      images: Array.from({ length: 18 }, (_, i) => `/images/gallery/Bbor_graduation_${i + 5}.png`),
-    },
-    {
-      id: 'daily-life',
-      name: 'BBOR Daily Life',
-      preview: '/images/IMG-20240925-WA0180-300x300.png',
-      images: [
-        '/images/IMG-20240925-WA0180-300x300.png',
-        '/images/IMG-20240924-WA0031-300x300.png',
-        '/images/IMG-20240925-WA0234-300x300.png',
-      ],
-    },
-    {
-      id: 'vocational',
-      name: 'BBOR Vocational Skills',
-      preview: '/images/IMG-20240925-WA0183-300x300.png',
-      images: [
-        '/images/IMG-20240925-WA0183-300x300.png',
-        '/images/IMG-20240925-WA0174-300x300.png',
-      ],
-    },
-    {
-      id: 'before-after',
-      name: 'BBOR Before and After',
-      preview: '/images/Untitled-1.png',
-      images: ['/images/Untitled-1.png'],
-    },
-    {
-      id: 'healthcare',
-      name: 'BBOR Healthcare',
-      preview: '/images/Untitled-1.png',
-      images: ['/images/Untitled-1.png', '/images/IMG-20240925-WA0234-300x300.png'],
-    },
-    {
-      id: 'weddings',
-      name: 'BBOR Weddings',
-      preview: '/images/IMG-20240924-WA0018-300x300.png',
-      images: ['/images/IMG-20240924-WA0018-300x300.png'],
-    },
-    {
-      id: 'donations',
-      name: 'BBOR Donations Accepted',
-      preview: '/images/IMG-20240925-WA0234-300x300.png',
-      images: ['/images/IMG-20240925-WA0234-300x300.png'],
-    },
-    {
-      id: 'education',
-      name: 'BBOR Education',
-      preview: '/images/IMG-20240924-WA0018-300x300.png',
-      images: ['/images/IMG-20240924-WA0018-300x300.png', '/images/IMG-20240925-WA0180-300x300.png'],
-    },
-  ]
-
-  // Album view - shows all photos in selected album
+  // Album detail view
   if (selectedAlbum) {
-    const album = albums.find(a => a.id === selectedAlbum)
-    if (!album) return null
-
     return (
       <div className="min-h-screen pt-20 bg-gray-50">
         <WhatsAppButton />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Back button */}
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold text-black">{album.name}</h1>
-            <button
-              onClick={() => setSelectedAlbum(null)}
-              className="bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Albums
-            </button>
+            <div>
+              <button
+                onClick={() => setSelectedAlbum(null)}
+                className="text-primary hover:underline mb-2 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Albums
+              </button>
+              <h1 className="text-4xl font-bold text-black">{selectedAlbum.name}</h1>
+              {selectedAlbum.description && (
+                <p className="text-gray-600 mt-2">{selectedAlbum.description}</p>
+              )}
+            </div>
           </div>
 
-          {/* Photo grid with polaroid effect */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {album.images.map((img, index) => (
-              <div key={index} className="polaroid">
+            {selectedAlbum.photos.map((photo) => (
+              <div key={photo.id} className="polaroid">
                 <div className="photo relative h-64">
-                  <Image
-                    src={img}
-                    alt={`${album.name} ${index + 1}`}
-                    fill
-                    className="object-cover"
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.caption || selectedAlbum.name}
+                    className="w-full h-full object-cover"
                   />
                 </div>
+                {photo.caption && (
+                  <p className="text-center text-sm text-gray-700 mt-2">{photo.caption}</p>
+                )}
               </div>
             ))}
           </div>
+
+          {selectedAlbum.photos.length === 0 && (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <p className="text-gray-500">This album is empty</p>
+            </div>
+          )}
         </div>
 
         <BottomSection />
@@ -210,12 +133,11 @@ export default function Gallery() {
     )
   }
 
-  // Main gallery view - shows album covers
+  // Main gallery - albums grid
   return (
     <div className="min-h-screen pt-20">
       <WhatsAppButton />
 
-      {/* Hero Section */}
       <section className="relative h-96 bg-gradient-to-br from-primary to-primary-dark text-white flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">Our Gallery</h1>
@@ -225,68 +147,50 @@ export default function Gallery() {
         </div>
       </section>
 
-      {/* Album Grid */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-16 text-black">Photo Albums</h2>
           
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">Loading albums...</p>
+              <p className="text-gray-600 text-lg">Loading albums...</p>
+            </div>
+          ) : albums.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow">
+              <p className="text-gray-500 text-lg">No albums available yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {albums.map((album) => {
-                const dynamicPreview = albumPreviews[album.id]
-                
-                return (
-                  <div
-                    key={album.id}
-                    className="album-card group relative bg-white rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
-                    onClick={() => setSelectedAlbum(album.id)}
-                  >
-                    <div className="relative h-80">
-                      {dynamicPreview ? (
-                        dynamicPreview.startsWith('data:image') ? (
-                          <img
-                            src={dynamicPreview}
-                            alt={album.name}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        ) : (
-                          <Image
-                            src={dynamicPreview}
-                            alt={album.name}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        )
-                      ) : (
-                        <Image
-                          src={album.preview}
-                          alt={album.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+              {albums.map((album) => (
+                <div
+                  key={album.id}
+                  className="album-card group relative bg-white rounded-xl overflow-hidden shadow-lg cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                  onClick={() => setSelectedAlbum(album)}
+                >
+                  <div className="relative h-80">
+                    <img
+                      src={album.coverImage}
+                      alt={album.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                    
+                    <div className="absolute bottom-0 left-0 right-0 p-6">
+                      <h3 className="text-2xl font-bold text-white mb-2">{album.name}</h3>
+                      <p className="text-white/80 text-sm">{album.photos.length} photos</p>
+                      {album.description && (
+                        <p className="text-white/70 text-sm mt-2 line-clamp-2">{album.description}</p>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                      
-                      {/* Album name overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-6">
-                        <h3 className="text-2xl font-bold text-white mb-2">{album.name}</h3>
-                        <p className="text-white/80 text-sm">{album.images.length} photos</p>
-                      </div>
+                    </div>
 
-                      {/* See More button on hover */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <button className="see-more-btn">
-                          <span>See More</span>
-                        </button>
-                      </div>
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button className="see-more-btn">
+                        <span>See More</span>
+                      </button>
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>
