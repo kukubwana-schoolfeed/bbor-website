@@ -1394,7 +1394,22 @@ export default function AdminPage() {
                   <div className="flex gap-2">
                     <button onClick={() => setShowPhotoForm(true)} className="bg-primary text-white px-4 py-2 rounded-lg">+ Add Photo</button>
                     <button onClick={() => { setEditingAlbum(selectedAlbum); setAlbumForm({ name: selectedAlbum.name, description: selectedAlbum.description || '', coverImage: selectedAlbum.coverImage, status: selectedAlbum.status, order: selectedAlbum.order }); setShowAlbumForm(true) }} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Edit Album</button>
-                    <button onClick={() => handleDeleteAlbum(selectedAlbum.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">Delete Album</button>
+                    <button 
+  onClick={() => {
+    setEditingAlbum(selectedAlbum)
+    setAlbumForm({
+      name: selectedAlbum.name,
+      description: selectedAlbum.description || '',
+      coverImage: selectedAlbum.coverImage,
+      status: selectedAlbum.status,
+      order: selectedAlbum.order
+    })
+    setShowAlbumForm(true)
+  }}
+  className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+>
+  Edit Album
+</button>
                   </div>
                 </div>
 
