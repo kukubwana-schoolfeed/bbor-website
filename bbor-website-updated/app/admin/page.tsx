@@ -519,8 +519,13 @@ export default function AdminPage() {
   }
 
   const handleSaveAlbum = async () => {
-    if (!albumForm.name || !albumForm.coverImage) {
-      alert('Please fill in album name and upload cover image')
+    if (!albumForm.name) {
+      alert('Please fill in album name')
+      return
+    }
+    
+    if (!editingAlbum && !albumForm.coverImage) {
+      alert('Please upload cover image')
       return
     }
 
@@ -890,6 +895,10 @@ export default function AdminPage() {
               <h3 className="text-2xl font-bold mb-4">{editingAlbum ? 'Edit' : 'Add'} Album</h3>
               <input type="text" value={albumForm.name} onChange={(e) => setAlbumForm({...albumForm, name: e.target.value})} placeholder="Album Name" className="w-full mb-4 px-4 py-3 border rounded-lg" />
               <textarea value={albumForm.description} onChange={(e) => setAlbumForm({...albumForm, description: e.target.value})} placeholder="Description (optional)" className="w-full mb-4 px-4 py-3 border rounded-lg" rows={3} />
+              
+              {albumForm.coverImage && <img src={albumForm.coverImage} className="w-full h-32 object-cover rounded mb-2" />}
+              
+              <label className="block text-sm text-gray-700 mb-2">{editingAlbum ? 'Change Cover Image (optional)' : 'Cover Image *'}</label>
               <input type="file" accept="image/*" onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) {
@@ -898,7 +907,7 @@ export default function AdminPage() {
                   reader.readAsDataURL(file)
                 }
               }} className="w-full mb-4 px-4 py-3 border rounded-lg" />
-              {albumForm.coverImage && <img src={albumForm.coverImage} className="w-full h-32 object-cover rounded mb-4" />}
+              
               <div className="flex gap-4">
                 <button onClick={handleSaveAlbum} className="flex-1 bg-primary text-white py-3 rounded-lg">Save</button>
                 <button onClick={() => { setShowAlbumForm(false); setEditingAlbum(null) }} className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
