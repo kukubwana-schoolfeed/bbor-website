@@ -111,7 +111,6 @@ export default function AdminPage() {
   })
   const [showPhotoForm, setShowPhotoForm] = useState(false)
   const [photoForm, setPhotoForm] = useState({ imageUrl: '', caption: '', order: 1 })
-  const [editingPhoto, setEditingPhoto] = useState<AlbumPhoto | null>(null)
 
 
   // Form states
@@ -162,6 +161,37 @@ export default function AdminPage() {
     setIsLoggedIn(false)
     setIsLoading(false)
   }, [])
+
+  const verifyToken = async (token: string) => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/auth/verify`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        if (data.user) {
+          setIsLoggedIn(true)
+          loadAllData(token)
+        } else {
+          // Invalid response, force logout
+          localStorage.removeItem('adminToken')
+          setIsLoggedIn(false)
+        }
+      } else {
+        // Token invalid or expired, force logout
+        localStorage.removeItem('adminToken')
+        setIsLoggedIn(false)
+      }
+    } catch (error) {
+      console.error('Token verification failed:', error)
+      localStorage.removeItem('adminToken')
+      setIsLoggedIn(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const loadAllData = async (token: string) => {
     try {
@@ -352,6 +382,7 @@ export default function AdminPage() {
 
   // STORY HANDLERS
   const handleSaveStory = async () => {
+    // Better validation with specific error messages
     if (!storyForm.name) {
       alert('❌ Error: Please enter the child\'s name')
       return
@@ -364,6 +395,8 @@ export default function AdminPage() {
       alert('❌ Error: Please upload a photo of the child')
       return
     }
+
+    console.log('Saving story:', storyForm) // Debug log
 
     try {
       const token = getToken()
@@ -381,6 +414,8 @@ export default function AdminPage() {
         order: storyForm.order
       }
 
+      console.log('Sending to API:', data) // Debug log
+
       const res = editingStory
         ? await fetch(`${API_URL}/api/stories/${editingStory.id}`, {
             method: 'PUT',
@@ -393,17 +428,24 @@ export default function AdminPage() {
             body: JSON.stringify(data)
           })
 
+      console.log('API Response status:', res.status) // Debug log
+
       if (res.ok) {
+        const savedStory = await res.json()
+        console.log('Story saved successfully:', savedStory) // Debug log
         alert('✅ Story saved successfully!')
         loadAllData(token!)
         setShowStoryForm(false)
         setEditingStory(null)
         setStoryForm({ name: '', story: '', imageUrl: '', status: 'Active', order: 1 })
       } else {
+        const errorText = await res.text()
+        console.error('API Error:', errorText) // Debug log
         alert(`❌ Failed to save story. Server error: ${res.status}`)
       }
     } catch (error) {
-      alert('❌ Failed to save story.')
+      console.error('Save story error:', error) // Debug log
+      alert('❌ Failed to save story. Check console for details.')
     }
   }
 
@@ -531,12 +573,8 @@ export default function AdminPage() {
   
   // GALLERY HANDLERS
   const handleSaveAlbum = async () => {
-    if (!albumForm.name) {
-      alert('Please fill in album name')
-      return
-    }
-    if (!editingAlbum && !albumForm.coverImage) {
-      alert('Please upload cover image')
+    if (!albumForm.name || !albumForm.coverImage) {
+      alert('Please fill in album name and upload cover image')
       return
     }
 
@@ -567,12 +605,6 @@ export default function AdminPage() {
         setShowAlbumForm(false)
         setEditingAlbum(null)
         setAlbumForm({ name: '', description: '', coverImage: '', status: 'Active', order: 1 })
-        if (editingAlbum && selectedAlbum?.id === editingAlbum.id) {
-          const albumRes = await fetch(`${API_URL}/api/albums/${editingAlbum.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-          if (albumRes.ok) setSelectedAlbum(await albumRes.json())
-        }
       }
     } catch (error) {
       alert('Failed to save album')
@@ -619,27 +651,6 @@ export default function AdminPage() {
       }
     } catch (error) {
       alert('Failed to add photo')
-    }
-  }
-
-  const handleUpdatePhotoCaption = async (photoId: number, newCaption: string) => {
-    if (!selectedAlbum) return
-    try {
-      const token = getToken()
-      const res = await fetch(`${API_URL}/api/albums/${selectedAlbum.id}/photos/${photoId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ caption: newCaption })
-      })
-      if (res.ok) {
-        const albumRes = await fetch(`${API_URL}/api/albums/${selectedAlbum.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (albumRes.ok) setSelectedAlbum(await albumRes.json())
-        setEditingPhoto(null)
-      }
-    } catch (error) {
-      alert('Failed to update caption')
     }
   }
 
@@ -899,7 +910,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* CAUSES TAB */}
+        {/* CAUSES TAB - Will add complete implementation in next file part */}
         {activeTab === 'causes' && (
           <div>
             <div className="flex justify-between mb-6">
@@ -1382,7 +1393,7 @@ export default function AdminPage() {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setShowPhotoForm(true)} className="bg-primary text-white px-4 py-2 rounded-lg">+ Add Photo</button>
-                    <button onClick={() => { setShowAlbumForm(true); setTimeout(() => { setEditingAlbum(selectedAlbum); setAlbumForm({ name: selectedAlbum.name, description: selectedAlbum.description || '', coverImage: selectedAlbum.coverImage, status: selectedAlbum.status, order: selectedAlbum.order }) }, 0) }} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Edit Album</button>
+                    <button onClick={() => { setEditingAlbum(selectedAlbum); setAlbumForm({ name: selectedAlbum.name, description: selectedAlbum.description || '', coverImage: selectedAlbum.coverImage, status: selectedAlbum.status, order: selectedAlbum.order }); setShowAlbumForm(true) }} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Edit Album</button>
                     <button onClick={() => handleDeleteAlbum(selectedAlbum.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">Delete Album</button>
                   </div>
                 </div>
@@ -1391,23 +1402,8 @@ export default function AdminPage() {
                   {selectedAlbum.photos.map(photo => (
                     <div key={photo.id} className="relative group">
                       <img src={photo.imageUrl} alt={photo.caption || ''} className="w-full h-48 object-cover rounded-lg" />
-                      {editingPhoto?.id === photo.id ? (
-                        <div className="mt-2">
-                          <input type="text" value={editingPhoto.caption || ''} onChange={(e) => setEditingPhoto({...editingPhoto, caption: e.target.value})} className="w-full px-2 py-1 border rounded text-sm" placeholder="Caption" />
-                          <div className="flex gap-2 mt-1">
-                            <button onClick={() => handleUpdatePhotoCaption(photo.id, editingPhoto.caption || '')} className="flex-1 bg-green-600 text-white text-xs py-1 rounded">Save</button>
-                            <button onClick={() => setEditingPhoto(null)} className="flex-1 bg-gray-400 text-white text-xs py-1 rounded">Cancel</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          {photo.caption && <p className="text-sm text-gray-600 mt-1">{photo.caption}</p>}
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1">
-                            <button onClick={() => setEditingPhoto(photo)} className="bg-blue-600 text-white p-1 rounded text-xs">Edit</button>
-                            <button onClick={() => handleDeletePhoto(selectedAlbum.id, photo.id)} className="bg-red-600 text-white p-1 rounded text-xs">✕</button>
-                          </div>
-                        </>
-                      )}
+                      {photo.caption && <p className="text-sm text-gray-600 mt-1">{photo.caption}</p>}
+                      <button onClick={() => handleDeletePhoto(selectedAlbum.id, photo.id)} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
                     </div>
                   ))}
                 </div>
@@ -1458,8 +1454,6 @@ export default function AdminPage() {
                       <h3 className="text-2xl font-bold mb-4">{editingAlbum ? 'Edit' : 'Add'} Album</h3>
                       <input type="text" value={albumForm.name} onChange={(e) => setAlbumForm({...albumForm, name: e.target.value})} placeholder="Album Name" className="w-full mb-4 px-4 py-3 border rounded-lg" />
                       <textarea value={albumForm.description} onChange={(e) => setAlbumForm({...albumForm, description: e.target.value})} placeholder="Description (optional)" className="w-full mb-4 px-4 py-3 border rounded-lg" rows={3} />
-                      {albumForm.coverImage && <img src={albumForm.coverImage} className="w-full h-32 object-cover rounded mb-2" />}
-                      <label className="block text-sm text-gray-700 mb-2">{editingAlbum ? 'Change Cover Image (optional)' : 'Cover Image *'}</label>
                       <input type="file" accept="image/*" onChange={(e) => {
                         const file = e.target.files?.[0]
                         if (file) {
@@ -1468,6 +1462,7 @@ export default function AdminPage() {
                           reader.readAsDataURL(file)
                         }
                       }} className="w-full mb-4 px-4 py-3 border rounded-lg" />
+                      {albumForm.coverImage && <img src={albumForm.coverImage} className="w-full h-32 object-cover rounded mb-4" />}
                       <div className="flex gap-4">
                         <button onClick={handleSaveAlbum} className="flex-1 bg-primary text-white py-3 rounded-lg">Save</button>
                         <button onClick={() => { setShowAlbumForm(false); setEditingAlbum(null) }} className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
