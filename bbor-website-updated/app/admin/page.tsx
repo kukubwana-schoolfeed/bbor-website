@@ -67,6 +67,25 @@ type BankAccount = {
   status: string
 }
 
+type Album = {
+  id: number
+  name: string
+  description: string | null
+  coverImage: string
+  status: 'Active' | 'Inactive'
+  order: number
+  photos: AlbumPhoto[]
+}
+
+type AlbumPhoto = {
+  id: number
+  albumId: number
+  imageUrl: string
+  caption: string | null
+  order: number
+}
+
+
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -74,7 +93,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'causes' | 'news' | 'stories' | 'faqs' | 'images' | 'withdraw'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'causes' | 'news' | 'stories' | 'faqs' | 'images' | 'withdraw' | 'gallery'>('dashboard')
   
   const [balance, setBalance] = useState(500)
   const [causes, setCauses] = useState<Cause[]>([])
@@ -83,6 +102,16 @@ export default function AdminPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([])
   const [images, setImages] = useState<SiteImage[]>([])
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([])
+  const [albums, setAlbums] = useState<Album[]>([])
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null)
+  const [showAlbumForm, setShowAlbumForm] = useState(false)
+  const [editingAlbum, setEditingAlbum] = useState<Album | null>(null)
+  const [albumForm, setAlbumForm] = useState({
+    name: '', description: '', coverImage: '', status: 'Active' as 'Active' | 'Inactive', order: 1
+  })
+  const [showPhotoForm, setShowPhotoForm] = useState(false)
+  const [photoForm, setPhotoForm] = useState({ imageUrl: '', caption: '', order: 1 })
+
 
   // Form states
   const [showCauseForm, setShowCauseForm] = useState(false)
@@ -166,13 +195,14 @@ export default function AdminPage() {
 
   const loadAllData = async (token: string) => {
     try {
-      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes] = await Promise.all([
+      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes] = await Promise.all([
         fetch(`${API_URL}/api/causes`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/news`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/stories`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/faqs`, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${API_URL}/api/images`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/bank-accounts`, { headers: { 'Authorization': `Bearer ${token}` } })
+        fetch(`${API_URL}/api/bank-accounts`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/albums`, { headers: { 'Authorization': `Bearer ${token}` } })
       ])
 
       if (causesRes.ok) setCauses(await causesRes.json())
@@ -181,6 +211,7 @@ export default function AdminPage() {
       if (faqsRes.ok) setFaqs(await faqsRes.json())
       if (imagesRes.ok) setImages(await imagesRes.json())
       if (bankRes.ok) setBankAccounts(await bankRes.json())
+      if (albumsRes.ok) setAlbums(await albumsRes.json())
     } catch (error) {
       console.error('Failed to load data:', error)
     }
@@ -539,6 +570,107 @@ export default function AdminPage() {
     alert('Coming Soon!\n\nWithdrawal feature will be activated once payment processing is fully integrated.')
   }
 
+  
+  // GALLERY HANDLERS
+  const handleSaveAlbum = async () => {
+    if (!albumForm.name || !albumForm.coverImage) {
+      alert('Please fill in album name and upload cover image')
+      return
+    }
+
+    try {
+      const token = getToken()
+      const data = {
+        name: albumForm.name,
+        description: albumForm.description,
+        coverImage: albumForm.coverImage,
+        status: albumForm.status,
+        order: albumForm.order
+      }
+
+      const res = editingAlbum
+        ? await fetch(`${API_URL}/api/albums/${editingAlbum.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+          })
+        : await fetch(`${API_URL}/api/albums`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+          })
+
+      if (res.ok) {
+        loadAllData(token!)
+        setShowAlbumForm(false)
+        setEditingAlbum(null)
+        setAlbumForm({ name: '', description: '', coverImage: '', status: 'Active', order: 1 })
+      }
+    } catch (error) {
+      alert('Failed to save album')
+    }
+  }
+
+  const handleDeleteAlbum = async (id: number) => {
+    if (!confirm('Delete this album and all its photos?')) return
+    try {
+      const token = getToken()
+      await fetch(`${API_URL}/api/albums/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      loadAllData(token!)
+      setSelectedAlbum(null)
+    } catch (error) {
+      alert('Failed to delete album')
+    }
+  }
+
+  const handleAddPhoto = async () => {
+    if (!photoForm.imageUrl || !selectedAlbum) {
+      alert('Please upload an image')
+      return
+    }
+
+    try {
+      const token = getToken()
+      const res = await fetch(`${API_URL}/api/albums/${selectedAlbum.id}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(photoForm)
+      })
+
+      if (res.ok) {
+        loadAllData(token!)
+        setShowPhotoForm(false)
+        setPhotoForm({ imageUrl: '', caption: '', order: 1 })
+        const albumRes = await fetch(`${API_URL}/api/albums/${selectedAlbum.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (albumRes.ok) setSelectedAlbum(await albumRes.json())
+      }
+    } catch (error) {
+      alert('Failed to add photo')
+    }
+  }
+
+  const handleDeletePhoto = async (albumId: number, photoId: number) => {
+    if (!confirm('Delete this photo?')) return
+    try {
+      const token = getToken()
+      await fetch(`${API_URL}/api/albums/${albumId}/photos/${photoId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const albumRes = await fetch(`${API_URL}/api/albums/${albumId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (albumRes.ok) setSelectedAlbum(await albumRes.json())
+    } catch (error) {
+      alert('Failed to delete photo')
+    }
+  }
+
   const filteredImages = selectedPage === 'All' ? images : images.filter(img => img.page === selectedPage)
 
   if (isLoading) {
@@ -632,7 +764,8 @@ export default function AdminPage() {
               { id: 'news', label: '📰 News' },
               { id: 'stories', label: '👥 Stories' },
               { id: 'faqs', label: '❓ FAQs' },
-              { id: 'images', label: '🖼️ Images' }
+              { id: 'images', label: '🖼️ Images' },
+              { id: 'gallery', label: '🎨 Gallery' }
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-2 font-semibold border-b-2 transition whitespace-nowrap ${
@@ -1247,6 +1380,101 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {activeTab === 'gallery' && (
+          <div>
+            {selectedAlbum ? (
+              <div>
+                <div className="flex justify-between mb-6">
+                  <div>
+                    <button onClick={() => setSelectedAlbum(null)} className="text-primary hover:underline mb-2">← Back to Albums</button>
+                    <h2 className="text-2xl font-bold">{selectedAlbum.name}</h2>
+                    {selectedAlbum.description && <p className="text-gray-600">{selectedAlbum.description}</p>}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setShowPhotoForm(true)} className="bg-primary text-white px-4 py-2 rounded-lg">+ Add Photo</button>
+                    <button onClick={() => { setEditingAlbum(selectedAlbum); setAlbumForm({ name: selectedAlbum.name, description: selectedAlbum.description || '', coverImage: selectedAlbum.coverImage, status: selectedAlbum.status, order: selectedAlbum.order }); setShowAlbumForm(true) }} className="bg-blue-600 text-white px-4 py-2 rounded-lg">Edit Album</button>
+                    <button onClick={() => handleDeleteAlbum(selectedAlbum.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">Delete Album</button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  {selectedAlbum.photos.map(photo => (
+                    <div key={photo.id} className="relative group">
+                      <img src={photo.imageUrl} alt={photo.caption || ''} className="w-full h-48 object-cover rounded-lg" />
+                      {photo.caption && <p className="text-sm text-gray-600 mt-1">{photo.caption}</p>}
+                      <button onClick={() => handleDeletePhoto(selectedAlbum.id, photo.id)} className="absolute top-2 right-2 bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition">✕</button>
+                    </div>
+                  ))}
+                </div>
+
+                {showPhotoForm && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-8 max-w-md w-full">
+                      <h3 className="text-2xl font-bold mb-4">Add Photo</h3>
+                      <input type="file" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onloadend = () => setPhotoForm({...photoForm, imageUrl: reader.result as string})
+                          reader.readAsDataURL(file)
+                        }
+                      }} className="w-full mb-4 px-4 py-3 border rounded-lg" />
+                      <input type="text" value={photoForm.caption} onChange={(e) => setPhotoForm({...photoForm, caption: e.target.value})} placeholder="Caption (optional)" className="w-full mb-4 px-4 py-3 border rounded-lg" />
+                      <div className="flex gap-4">
+                        <button onClick={handleAddPhoto} className="flex-1 bg-primary text-white py-3 rounded-lg">Add</button>
+                        <button onClick={() => setShowPhotoForm(false)} className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between mb-6">
+                  <h2 className="text-2xl font-bold">Gallery Albums</h2>
+                  <button onClick={() => { setShowAlbumForm(true); setEditingAlbum(null); setAlbumForm({ name: '', description: '', coverImage: '', status: 'Active', order: albums.length + 1 }) }} className="bg-primary text-white px-6 py-3 rounded-lg font-semibold">+ Add Album</button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6">
+                  {albums.map(album => (
+                    <div key={album.id} className="bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition" onClick={() => setSelectedAlbum(album)}>
+                      <img src={album.coverImage} alt={album.name} className="w-full h-48 object-cover" />
+                      <div className="p-4">
+                        <h3 className="font-bold text-lg">{album.name}</h3>
+                        <p className="text-sm text-gray-600">{album.photos.length} photos</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {showAlbumForm && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-8 max-w-md w-full">
+                      <h3 className="text-2xl font-bold mb-4">{editingAlbum ? 'Edit' : 'Add'} Album</h3>
+                      <input type="text" value={albumForm.name} onChange={(e) => setAlbumForm({...albumForm, name: e.target.value})} placeholder="Album Name" className="w-full mb-4 px-4 py-3 border rounded-lg" />
+                      <textarea value={albumForm.description} onChange={(e) => setAlbumForm({...albumForm, description: e.target.value})} placeholder="Description (optional)" className="w-full mb-4 px-4 py-3 border rounded-lg" rows={3} />
+                      <input type="file" accept="image/*" onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          const reader = new FileReader()
+                          reader.onloadend = () => setAlbumForm({...albumForm, coverImage: reader.result as string})
+                          reader.readAsDataURL(file)
+                        }
+                      }} className="w-full mb-4 px-4 py-3 border rounded-lg" />
+                      {albumForm.coverImage && <img src={albumForm.coverImage} className="w-full h-32 object-cover rounded mb-4" />}
+                      <div className="flex gap-4">
+                        <button onClick={handleSaveAlbum} className="flex-1 bg-primary text-white py-3 rounded-lg">Save</button>
+                        <button onClick={() => { setShowAlbumForm(false); setEditingAlbum(null) }} className="flex-1 bg-gray-200 py-3 rounded-lg">Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   )
