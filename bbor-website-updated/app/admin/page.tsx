@@ -562,141 +562,79 @@ export default function AdminPage() {
   }
 
   const handleSaveCryptoWallet = async () => {
-
     if (!cryptoWalletForm.walletAddress) {
-
       alert('Please enter wallet address')
-
       return
-
     }
 
     try {
-
       const token = getToken()
-
       const res = editingCryptoWallet
-
-        ? await fetch${API_URL}/api/crypto-wallet/${editingCryptoWallet.id}, {
-
+        ? await fetch(API_URL + '/api/crypto-wallet/' + editingCryptoWallet.id, {
             method: 'PUT',
-
-            headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
-
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify(cryptoWalletForm)
-
           })
-
-        : await fetch${API_URL}/api/crypto-wallet, {
-
+        : await fetch(API_URL + '/api/crypto-wallet', {
             method: 'POST',
-
-            headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
-
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify(cryptoWalletForm)
-
           })
 
       if (res.ok) {
-
         const data = await res.json()
-
         setCryptoWallet(data)
-
         setShowCryptoWalletForm(false)
-
         setEditingCryptoWallet(null)
-
         setCryptoWalletForm({ walletAddress: '', walletName: 'Sling USDC Wallet' })
-
         alert('✅ Crypto wallet saved successfully!')
-
       }
-
     } catch (error) {
-
       alert('Failed to save crypto wallet')
-
     }
-
   }
 
   const handleDeleteCryptoWallet = async (id: number) => {
-
     if (!confirm('Delete this crypto wallet?')) return
-
     try {
-
       const token = getToken()
-
-      await fetch${API_URL}/api/crypto-wallet/${id}, {
-
+      await fetch(API_URL + '/api/crypto-wallet/' + id, {
         method: 'DELETE',
-
-        headers: { 'Authorization': Bearer ${token} }
-
+        headers: { 'Authorization': 'Bearer ' + token }
       })
-
       setCryptoWallet(null)
-
       alert('Wallet deleted')
-
     } catch (error) {
-
       alert('Failed to delete crypto wallet')
-
     }
-
   }
 
   const handleSavePaymentSettings = async () => {
-
     if (!paymentSettings?.nowpaymentsApiKey) {
-
       alert('Please enter NowPayments API key')
-
       return
-
     }
 
     try {
-
       const token = getToken()
-
-      const res = await fetch${API_URL}/api/payment-settings, {
-
+      const res = await fetch(API_URL + '/api/payment-settings', {
         method: 'PUT',
-
-        headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
-
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({
-
           nowpaymentsApiKey: paymentSettings.nowpaymentsApiKey,
-
           withdrawalMode: paymentSettings.withdrawalMode,
-
           minimumWithdrawal: paymentSettings.minimumWithdrawal
-
         })
-
       })
 
       if (res.ok) {
-
         const data = await res.json()
-
         setPaymentSettings(data)
-
         alert('✅ Payment settings saved!')
-
       }
-
     } catch (error) {
-
       alert('Failed to save payment settings')
-
     }
-
   }
 
 
