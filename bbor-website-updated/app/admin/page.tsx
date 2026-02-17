@@ -196,69 +196,38 @@ export default function AdminPage() {
   }, [])
 
     const loadAllData = async (token: string) => {
-
     try {
-
       const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes, cryptoWalletRes, paymentSettingsRes] = await Promise.all([
-
-        fetch${API_URL}/api/causes, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/news, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/stories, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/faqs, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/images, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/bank-accounts, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/albums, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/crypto-wallet, { headers: { 'Authorization': Bearer ${token} } }),
-
-        fetch${API_URL}/api/payment-settings, { headers: { 'Authorization': Bearer ${token} } })
-
+        fetch(API_URL + '/api/causes', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/news', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/stories', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/faqs', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/images', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/bank-accounts', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/albums', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/crypto-wallet', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/payment-settings', { headers: { 'Authorization': 'Bearer ' + token } })
       ])
 
       if (causesRes.ok) setCauses(await causesRes.json())
-
       if (newsRes.ok) setNews(await newsRes.json())
-
       if (storiesRes.ok) setStories(await storiesRes.json())
-
       if (faqsRes.ok) setFaqs(await faqsRes.json())
-
       if (imagesRes.ok) setImages(await imagesRes.json())
-
       if (bankRes.ok) setBankAccounts(await bankRes.json())
-
       if (albumsRes.ok) setAlbums(await albumsRes.json())
-
       
-
       if (cryptoWalletRes.ok) {
-
         const data = await cryptoWalletRes.json()
-
         setCryptoWallet(data)
-
       }
-
       if (paymentSettingsRes.ok) {
-
         const data = await paymentSettingsRes.json()
-
         setPaymentSettings(data)
-
       }
-
     } catch (error) {
-
       console.error('Failed to load data:', error)
-
     }
-
   }
 
   const handleLogin = async (e: React.FormEvent) => {
