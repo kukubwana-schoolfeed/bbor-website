@@ -85,6 +85,23 @@ type AlbumPhoto = {
   order: number
 }
 
+type CryptoWallet = {
+  id: number
+  walletAddress: string
+  walletName: string
+  network: string
+  currency: string
+  isActive: boolean
+}
+
+type PaymentSettings = {
+  id: number
+  nowpaymentsApiKey: string | null
+  withdrawalMode: string
+  minimumWithdrawal: number
+}
+
+
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -112,6 +129,21 @@ export default function AdminPage() {
   const [showPhotoForm, setShowPhotoForm] = useState(false)
   const [photoForm, setPhotoForm] = useState({ imageUrl: '', caption: '', order: 1 })
   const [editingPhoto, setEditingPhoto] = useState<AlbumPhoto | null>(null)
+  const [cryptoWallet, setCryptoWallet] = useState<CryptoWallet | null>(null)
+
+  const [showCryptoWalletForm, setShowCryptoWalletForm] = useState(false)
+
+  const [editingCryptoWallet, setEditingCryptoWallet] = useState<CryptoWallet | null>(null)
+
+  const [cryptoWalletForm, setCryptoWalletForm] = useState({
+
+    walletAddress: '', walletName: 'Sling USDC Wallet'
+
+  })
+
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null)
+
+
 
 
   // Form states
@@ -163,28 +195,70 @@ export default function AdminPage() {
     setIsLoading(false)
   }, [])
 
-  const loadAllData = async (token: string) => {
+    const loadAllData = async (token: string) => {
+
     try {
-      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes] = await Promise.all([
-        fetch(`${API_URL}/api/causes`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/news`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/stories`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/faqs`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/images`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/bank-accounts`, { headers: { 'Authorization': `Bearer ${token}` } }),
-        fetch(`${API_URL}/api/albums`, { headers: { 'Authorization': `Bearer ${token}` } })
+
+      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes, cryptoWalletRes, paymentSettingsRes] = await Promise.all([
+
+        fetch${API_URL}/api/causes, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/news, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/stories, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/faqs, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/images, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/bank-accounts, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/albums, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/crypto-wallet, { headers: { 'Authorization': Bearer ${token} } }),
+
+        fetch${API_URL}/api/payment-settings, { headers: { 'Authorization': Bearer ${token} } })
+
       ])
 
       if (causesRes.ok) setCauses(await causesRes.json())
+
       if (newsRes.ok) setNews(await newsRes.json())
+
       if (storiesRes.ok) setStories(await storiesRes.json())
+
       if (faqsRes.ok) setFaqs(await faqsRes.json())
+
       if (imagesRes.ok) setImages(await imagesRes.json())
+
       if (bankRes.ok) setBankAccounts(await bankRes.json())
+
       if (albumsRes.ok) setAlbums(await albumsRes.json())
+
+      
+
+      if (cryptoWalletRes.ok) {
+
+        const data = await cryptoWalletRes.json()
+
+        setCryptoWallet(data)
+
+      }
+
+      if (paymentSettingsRes.ok) {
+
+        const data = await paymentSettingsRes.json()
+
+        setPaymentSettings(data)
+
+      }
+
     } catch (error) {
+
       console.error('Failed to load data:', error)
+
     }
+
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -518,6 +592,145 @@ export default function AdminPage() {
     }
   }
 
+  const handleSaveCryptoWallet = async () => {
+
+    if (!cryptoWalletForm.walletAddress) {
+
+      alert('Please enter wallet address')
+
+      return
+
+    }
+
+    try {
+
+      const token = getToken()
+
+      const res = editingCryptoWallet
+
+        ? await fetch${API_URL}/api/crypto-wallet/${editingCryptoWallet.id}, {
+
+            method: 'PUT',
+
+            headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
+
+            body: JSON.stringify(cryptoWalletForm)
+
+          })
+
+        : await fetch${API_URL}/api/crypto-wallet, {
+
+            method: 'POST',
+
+            headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
+
+            body: JSON.stringify(cryptoWalletForm)
+
+          })
+
+      if (res.ok) {
+
+        const data = await res.json()
+
+        setCryptoWallet(data)
+
+        setShowCryptoWalletForm(false)
+
+        setEditingCryptoWallet(null)
+
+        setCryptoWalletForm({ walletAddress: '', walletName: 'Sling USDC Wallet' })
+
+        alert('✅ Crypto wallet saved successfully!')
+
+      }
+
+    } catch (error) {
+
+      alert('Failed to save crypto wallet')
+
+    }
+
+  }
+
+  const handleDeleteCryptoWallet = async (id: number) => {
+
+    if (!confirm('Delete this crypto wallet?')) return
+
+    try {
+
+      const token = getToken()
+
+      await fetch${API_URL}/api/crypto-wallet/${id}, {
+
+        method: 'DELETE',
+
+        headers: { 'Authorization': Bearer ${token} }
+
+      })
+
+      setCryptoWallet(null)
+
+      alert('Wallet deleted')
+
+    } catch (error) {
+
+      alert('Failed to delete crypto wallet')
+
+    }
+
+  }
+
+  const handleSavePaymentSettings = async () => {
+
+    if (!paymentSettings?.nowpaymentsApiKey) {
+
+      alert('Please enter NowPayments API key')
+
+      return
+
+    }
+
+    try {
+
+      const token = getToken()
+
+      const res = await fetch${API_URL}/api/payment-settings, {
+
+        method: 'PUT',
+
+        headers: { 'Content-Type': 'application/json', 'Authorization': Bearer ${token} },
+
+        body: JSON.stringify({
+
+          nowpaymentsApiKey: paymentSettings.nowpaymentsApiKey,
+
+          withdrawalMode: paymentSettings.withdrawalMode,
+
+          minimumWithdrawal: paymentSettings.minimumWithdrawal
+
+        })
+
+      })
+
+      if (res.ok) {
+
+        const data = await res.json()
+
+        setPaymentSettings(data)
+
+        alert('✅ Payment settings saved!')
+
+      }
+
+    } catch (error) {
+
+      alert('Failed to save payment settings')
+
+    }
+
+  }
+
+
   const handleWithdraw = () => {
     const defaultAccount = bankAccounts.find(acc => acc.isDefault)
     if (!defaultAccount) {
@@ -794,44 +1007,235 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'withdraw' && (
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6">Withdraw Funds</h2>
+  <div className="max-w-4xl mx-auto">
+    <h2 className="text-2xl font-bold mb-6">Payment & Withdrawal Settings</h2>
 
-            <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-              <div className="text-center">
-                <p className="text-gray-600 mb-2">Available Balance</p>
-                <p className="text-5xl font-bold text-green-600 mb-2">${balance}</p>
-                <p className="text-sm text-gray-500">Equivalent to K{(balance * 26).toLocaleString()} ZMW</p>
-              </div>
+    {/* CRYPTO WALLET SECTION */}
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h3 className="text-xl font-bold">Sling Crypto Wallet (USDC)</h3>
+          <p className="text-sm text-gray-600">For receiving card donations via NowPayments</p>
+        </div>
+        <button 
+          onClick={() => {
+            if (cryptoWallet) {
+              setEditingCryptoWallet(cryptoWallet)
+              setCryptoWalletForm({ walletAddress: cryptoWallet.walletAddress, walletName: cryptoWallet.walletName })
+            }
+            setShowCryptoWalletForm(true)
+          }} 
+          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark"
+        >
+          {cryptoWallet ? 'Edit Wallet' : '+ Add Wallet'}
+        </button>
+      </div>
+
+      {!cryptoWallet ? (
+        <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+          <p className="text-lg mb-2">No crypto wallet configured</p>
+          <p className="text-sm">Add your Sling USDC wallet address to receive donations</p>
+        </div>
+      ) : (
+        <div className="border-2 border-primary rounded-lg p-6 bg-primary/5">
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600">Wallet Name</p>
+              <p className="font-semibold text-lg">{cryptoWallet.walletName}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Network</p>
+              <p className="font-semibold text-lg">Solana (SOL)</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Currency</p>
+              <p className="font-semibold text-lg">USDC-SPL</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Wallet Address</p>
+              <p className="font-mono text-sm bg-gray-100 p-3 rounded break-all">{cryptoWallet.walletAddress}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <button 
+              onClick={() => {
+                setEditingCryptoWallet(cryptoWallet)
+                setCryptoWalletForm({ walletAddress: cryptoWallet.walletAddress, walletName: cryptoWallet.walletName })
+                setShowCryptoWalletForm(true)
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              Edit
+            </button>
+            <button 
+              onClick={() => handleDeleteCryptoWallet(cryptoWallet.id)}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* PAYMENT SETTINGS SECTION */}
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h3 className="text-xl font-bold mb-6">NowPayments Settings</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            API Key {!paymentSettings?.nowpaymentsApiKey && <span className="text-red-600">*</span>}
+          </label>
+          <input 
+            type="password"
+            value={paymentSettings?.nowpaymentsApiKey || ''} 
+            onChange={(e) => setPaymentSettings({...paymentSettings!, nowpaymentsApiKey: e.target.value})}
+            placeholder="Enter your NowPayments API key"
+            className="w-full px-4 py-3 border rounded-lg" 
+          />
+          <p className="text-xs text-gray-500 mt-1">Get this from nowpayments.io dashboard</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Withdrawal Mode</label>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setPaymentSettings({...paymentSettings!, withdrawalMode: 'manual'})}
+              className={`flex-1 py-3 rounded-lg font-semibold ${
+                paymentSettings?.withdrawalMode === 'manual' ? 'bg-primary text-white' : 'bg-gray-200'
+              }`}
+            >
+              Manual
+            </button>
+            <button
+              onClick={() => setPaymentSettings({...paymentSettings!, withdrawalMode: 'auto'})}
+              className={`flex-1 py-3 rounded-lg font-semibold ${
+                paymentSettings?.withdrawalMode === 'auto' ? 'bg-primary text-white' : 'bg-gray-200'
+              }`}
+            >
+              Automatic
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {paymentSettings?.withdrawalMode === 'auto' 
+              ? 'Donations will be sent to your wallet automatically' 
+              : 'You manually approve each withdrawal'}
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Withdrawal Amount ($)</label>
+          <input 
+            type="number"
+            value={paymentSettings?.minimumWithdrawal || 50} 
+            onChange={(e) => setPaymentSettings({...paymentSettings!, minimumWithdrawal: parseFloat(e.target.value)})}
+            placeholder="50"
+            className="w-full px-4 py-3 border rounded-lg" 
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Wait until balance reaches this amount before withdrawing (saves on fees)
+          </p>
+        </div>
+
+        <button 
+          onClick={handleSavePaymentSettings}
+          className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark"
+        >
+          Save Settings
+        </button>
+      </div>
+    </div>
+
+    {/* BALANCE DISPLAY */}
+    <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+      <div className="text-center">
+        <p className="text-gray-600 mb-2">Available Balance</p>
+        <p className="text-5xl font-bold text-green-600 mb-2">${balance}</p>
+        <p className="text-sm text-gray-500">Ready for withdrawal</p>
+      </div>
+    </div>
+
+    {/* WITHDRAW BUTTON */}
+    {cryptoWallet && paymentSettings?.nowpaymentsApiKey ? (
+      <button 
+        onClick={handleWithdraw} 
+        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-6 rounded-lg transition"
+      >
+        Withdraw ${balance} to Sling Wallet
+      </button>
+    ) : (
+      <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 text-center">
+        <p className="text-yellow-800 font-semibold mb-2">⚠️ Setup Required</p>
+        <p className="text-sm text-yellow-700">
+          {!cryptoWallet && 'Add your Sling wallet address. '}
+          {!paymentSettings?.nowpaymentsApiKey && 'Add your NowPayments API key. '}
+        </p>
+      </div>
+    )}
+
+    {/* CRYPTO WALLET FORM MODAL */}
+    {showCryptoWalletForm && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <h3 className="text-2xl font-bold mb-6">{editingCryptoWallet ? 'Edit' : 'Add'} Crypto Wallet</h3>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-800">
+              <strong>💡 Network:</strong> Solana (SOL)<br/>
+              <strong>💡 Currency:</strong> USDC-SPL<br/>
+              <strong>💡 Where to find:</strong> Open Sling app → Crypto → USDC → Copy address
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Wallet Name (Optional)</label>
+              <input 
+                type="text" 
+                value={cryptoWalletForm.walletName} 
+                onChange={(e) => setCryptoWalletForm({...cryptoWalletForm, walletName: e.target.value})}
+                placeholder="Sling USDC Wallet"
+                className="w-full px-4 py-3 border rounded-lg" 
+              />
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold">Bank Accounts</h3>
-                <button onClick={() => setShowBankForm(true)} className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark">
-                  + Add Account
-                </button>
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Wallet Address *</label>
+              <textarea 
+                value={cryptoWalletForm.walletAddress} 
+                onChange={(e) => setCryptoWalletForm({...cryptoWalletForm, walletAddress: e.target.value})}
+                placeholder="ANt2h9i7cRnYjU6xfzHDr3w9Q42ihVZHWXzrY4tkroX"
+                className="w-full px-4 py-3 border rounded-lg font-mono text-sm" 
+                rows={3}
+              />
+              <p className="text-xs text-gray-500 mt-1">Paste your Sling USDC wallet address here</p>
+            </div>
+          </div>
 
-              {bankAccounts.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <p className="text-lg mb-2">No bank accounts added</p>
-                  <p className="text-sm">Add a USD bank account to withdraw funds</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {bankAccounts.map(account => (
-                    <div key={account.id} className={`p-4 border-2 rounded-lg ${account.isDefault ? 'border-primary bg-primary/5' : 'border-gray-200'}`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-lg">{account.bankName}</p>
-                          <p className="text-gray-600">{account.accountName}</p>
-                          <p className="text-sm text-gray-500">****{account.accountNumber.slice(-4)}</p>
-                          <p className="text-xs text-gray-400 mt-1">{account.country} • {account.currency}</p>
-                        </div>
-                        {account.isDefault && (
-                          <span className="bg-primary text-white text-xs px-3 py-1 rounded-full">Default</span>
-                        )}
+          <div className="flex gap-4 mt-6">
+            <button 
+              onClick={handleSaveCryptoWallet} 
+              className="flex-1 bg-primary text-white py-3 rounded-lg font-semibold"
+            >
+              {editingCryptoWallet ? 'Update' : 'Add'} Wallet
+            </button>
+            <button 
+              onClick={() => { 
+                setShowCryptoWalletForm(false)
+                setEditingCryptoWallet(null)
+                setCryptoWalletForm({ walletAddress: '', walletName: 'Sling USDC Wallet' })
+              }} 
+              className="flex-1 bg-gray-200 py-3 rounded-lg font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
                       </div>
                     </div>
                   ))}
@@ -874,7 +1278,8 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Routing Number</label>
-                        <input type="text" value={bankForm.routingNumber} onChange={(e) => setBankForm({...bankForm, routingNumber: e.target.value})}
+           
+             <input type="text" value={bankForm.routingNumber} onChange={(e) => setBankForm({...bankForm, routingNumber: e.target.value})}
                           placeholder="026009593" className="w-full px-4 py-3 border rounded-lg" />
                       </div>
                     </div>
