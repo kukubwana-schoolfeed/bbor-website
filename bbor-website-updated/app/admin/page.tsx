@@ -1143,75 +1143,7 @@ export default function AdminPage() {
     )}
   </div>
 )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button onClick={handleWithdraw} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-6 rounded-lg transition">
-              Withdraw ${balance} to Bank
-            </button>
-            <p className="text-center text-sm text-gray-500 mt-4">
-              ⏰ Coming Soon: Withdrawals will be processed within 1-3 business days
-            </p>
-
-            {showBankForm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                  <h3 className="text-2xl font-bold mb-6">Add USD Bank Account</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Account Holder Name *</label>
-                      <input type="text" value={bankForm.accountName} onChange={(e) => setBankForm({...bankForm, accountName: e.target.value})}
-                        placeholder="John Doe" className="w-full px-4 py-3 border rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Account Number *</label>
-                      <input type="text" value={bankForm.accountNumber} onChange={(e) => setBankForm({...bankForm, accountNumber: e.target.value})}
-                        placeholder="1234567890" className="w-full px-4 py-3 border rounded-lg" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Bank Name *</label>
-                      <input type="text" value={bankForm.bankName} onChange={(e) => setBankForm({...bankForm, bankName: e.target.value})}
-                        placeholder="Bank of America" className="w-full px-4 py-3 border rounded-lg" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">SWIFT Code</label>
-                        <input type="text" value={bankForm.swiftCode} onChange={(e) => setBankForm({...bankForm, swiftCode: e.target.value})}
-                          placeholder="BOFAUS3N" className="w-full px-4 py-3 border rounded-lg" />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Routing Number</label>
-           
-             <input type="text" value={bankForm.routingNumber} onChange={(e) => setBankForm({...bankForm, routingNumber: e.target.value})}
-                          placeholder="026009593" className="w-full px-4 py-3 border rounded-lg" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input type="checkbox" checked={bankForm.isDefault} onChange={(e) => setBankForm({...bankForm, isDefault: e.target.checked})}
-                        className="w-4 h-4" />
-                      <label className="text-sm text-gray-700">Set as default account</label>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-4 mt-6">
-                    <button onClick={handleAddBankAccount} className="flex-1 bg-primary text-white py-3 rounded-lg font-semibold">
-                      Add Account
-                    </button>
-                    <button onClick={() => setShowBankForm(false)} className="flex-1 bg-gray-200 py-3 rounded-lg font-semibold">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* CAUSES TAB */}
+                              {/* CAUSES TAB */}
         {activeTab === 'causes' && (
           <div>
             <div className="flex justify-between mb-6">
