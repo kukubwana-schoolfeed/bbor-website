@@ -129,6 +129,143 @@ export default function AdminPage() {
   const [showPhotoForm, setShowPhotoForm] = useState(false)
   const [photoForm, setPhotoForm] = useState({ imageUrl: '', caption: '', order: 1 })
   const [editingPhoto, setEditingPhoto] = useState<AlbumPhoto | null>(null)
+// ADD THESE STATE VARIABLES (after existing useState declarations):
+
+const [moonPaySettings, setMoonPaySettings] = useState<MoonPaySettings | null>(null)
+
+const [transactions, setTransactions] = useState<Transaction[]>([])
+
+const [transactionSearch, setTransactionSearch] = useState('')
+
+const [loadingTransactions, setLoadingTransactions] = useState(false)
+
+// ADD THESE TYPES (after existing types):
+
+type MoonPaySettings = {
+
+  id: number
+
+  publicKey: string | null
+
+  secretKey: string | null
+
+  webhookSecret: string | null
+
+  phantomWalletAddress: string | null
+
+  phantomPrivateKey: string | null
+
+  slingWalletAddress: string | null
+
+  autoTransferEnabled: boolean
+
+}
+
+type Transaction = {
+
+  id: number
+
+  transactionId: string
+
+  amount: number
+
+  currency: string
+
+  status: string
+
+  donorName: string | null
+
+  donorEmail: string | null
+
+  createdAt: string
+
+}
+
+// ADD TO loadAllData function (in the Promise.all array):
+
+fetch(API_URL + '/api/moonpay/settings', { headers: { 'Authorization': 'Bearer ' + token } }),
+
+fetch(API_URL + '/api/moonpay/transactions', { headers: { 'Authorization': 'Bearer ' + token } })
+
+// ADD AFTER the existing if statements in loadAllData:
+
+if (moonPaySettingsRes.ok) {
+
+  const data = await moonPaySettingsRes.json()
+
+  setMoonPaySettings(data)
+
+}
+
+if (transactionsRes.ok) {
+
+  const data = await transactionsRes.json()
+
+  setTransactions(data)
+
+}
+
+// ADD THIS HANDLER (after other handlers):
+
+const handleSaveMoonPaySettings = async () => {
+
+  if (!moonPaySettings?.publicKey || !moonPaySettings?.secretKey) {
+
+    alert('Public Key and Secret Key are required')
+
+    return
+
+  }
+
+  try {
+
+    const token = getToken()
+
+    const res = await fetch(API_URL + '/api/moonpay/settings', {
+
+      method: 'PUT',
+
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+
+      body: JSON.stringify(moonPaySettings)
+
+    })
+
+    if (res.ok) {
+
+      const data = await res.json()
+
+      setMoonPaySettings(data)
+
+      alert('✅ MoonPay settings saved!')
+
+    }
+
+  } catch (error) {
+
+    alert('Failed to save settings')
+
+  }
+
+}
+
+// ADD THIS COMPUTED VALUE (after state declarations):
+
+const filteredTransactions = transactions.filter(tx => {
+
+  const search = transactionSearch.toLowerCase()
+
+  return (
+
+    (tx.donorName?.toLowerCase().includes(search) || false) ||
+
+    (tx.donorEmail?.toLowerCase().includes(search) || false)
+
+  )
+
+})
+
+
   const [cryptoWallet, setCryptoWallet] = useState<CryptoWallet | null>(null)
 
   const [showCryptoWalletForm, setShowCryptoWalletForm] = useState(false)
@@ -875,6 +1012,7 @@ export default function AdminPage() {
               { id: 'faqs', label: '❓ FAQs' },
               { id: 'images', label: '🖼️ Images' },
               { id: 'gallery', label: '🎨 Gallery' }
+	      { id: 'settings', label: '⚙️ Settings' }
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-2 font-semibold border-b-2 transition whitespace-nowrap ${
@@ -913,238 +1051,129 @@ export default function AdminPage() {
           </div>
         )}
 
-        {activeTab === 'withdraw' && (
-  <div className="max-w-4xl mx-auto">
-    <h2 className="text-2xl font-bold mb-6">Payment & Withdrawal Settings</h2>
+        
 
-    {/* CRYPTO WALLET SECTION */}
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h3 className="text-xl font-bold">Sling Crypto Wallet (USDC)</h3>
-          <p className="text-sm text-gray-600">For receiving card donations via NowPayments</p>
-        </div>
-        <button 
-          onClick={() => {
-            if (cryptoWallet) {
-              setEditingCryptoWallet(cryptoWallet)
-              setCryptoWalletForm({ walletAddress: cryptoWallet.walletAddress, walletName: cryptoWallet.walletName })
-            }
-            setShowCryptoWalletForm(true)
-          }} 
-          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-dark"
-        >
-          {cryptoWallet ? 'Edit Wallet' : '+ Add Wallet'}
-        </button>
-      </div>
+{activeTab === 'withdraw' && (
 
-      {!cryptoWallet ? (
-        <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-          <p className="text-lg mb-2">No crypto wallet configured</p>
-          <p className="text-sm">Add your Sling USDC wallet address to receive donations</p>
-        </div>
+  <div className="max-w-6xl mx-auto">
+
+    <h2 className="text-2xl font-bold mb-6">Donation Transactions</h2>
+
+    {/* SEARCH BAR */}
+
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+
+      <input
+
+        type="text"
+
+        value={transactionSearch}
+
+        onChange={(e) => setTransactionSearch(e.target.value)}
+
+        placeholder="Search by name or email..."
+
+        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none"
+
+      />
+
+    </div>
+
+    {/* TRANSACTIONS TABLE */}
+
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+
+      {loadingTransactions ? (
+
+        <div className="p-8 text-center text-gray-600">Loading transactions...</div>
+
+      ) : filteredTransactions.length === 0 ? (
+
+        <div className="p-8 text-center text-gray-500">No transactions found</div>
+
       ) : (
-        <div className="border-2 border-primary rounded-lg p-6 bg-primary/5">
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600">Wallet Name</p>
-              <p className="font-semibold text-lg">{cryptoWallet.walletName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Network</p>
-              <p className="font-semibold text-lg">Solana (SOL)</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Currency</p>
-              <p className="font-semibold text-lg">USDC-SPL</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Wallet Address</p>
-              <p className="font-mono text-sm bg-gray-100 p-3 rounded break-all">{cryptoWallet.walletAddress}</p>
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <button 
-              onClick={() => {
-                setEditingCryptoWallet(cryptoWallet)
-                setCryptoWalletForm({ walletAddress: cryptoWallet.walletAddress, walletName: cryptoWallet.walletName })
-                setShowCryptoWalletForm(true)
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              Edit
-            </button>
-            <button 
-              onClick={() => handleDeleteCryptoWallet(cryptoWallet.id)}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm"
-            >
-              Delete
-            </button>
-          </div>
+
+        <div className="overflow-x-auto">
+
+          <table className="w-full">
+
+            <thead className="bg-gray-50 border-b">
+
+              <tr>
+
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Name</th>
+
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
+
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
+
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody className="divide-y divide-gray-200">
+
+              {filteredTransactions.map((tx) => (
+
+                <tr key={tx.id} className="hover:bg-gray-50">
+
+                  <td className="px-6 py-4 text-sm text-gray-900">{tx.donorName || 'Anonymous'}</td>
+
+                  <td className="px-6 py-4 text-sm text-gray-600">{tx.donorEmail || '-'}</td>
+
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+
+                    ${tx.amount.toFixed(2)}
+
+                  </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-600">
+
+                    {new Date(tx.createdAt).toLocaleDateString()}
+
+                  </td>
+
+                  <td className="px-6 py-4">
+
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+
+                      tx.status === 'completed' ? 'bg-green-100 text-green-800' :
+
+                      tx.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+
+                      'bg-red-100 text-red-800'
+
+                    }`}>
+
+                      {tx.status}
+
+                    </span>
+
+                  </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
         </div>
+
       )}
+
     </div>
 
-    {/* PAYMENT SETTINGS SECTION */}
-    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <h3 className="text-xl font-bold mb-6">NowPayments Settings</h3>
-      
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            API Key {!paymentSettings?.nowpaymentsApiKey && <span className="text-red-600">*</span>}
-          </label>
-          <input 
-            type="password"
-            value={paymentSettings?.nowpaymentsApiKey || ''} 
-            onChange={(e) => setPaymentSettings({...paymentSettings!, nowpaymentsApiKey: e.target.value})}
-            placeholder="Enter your NowPayments API key"
-            className="w-full px-4 py-3 border rounded-lg" 
-          />
-          <p className="text-xs text-gray-500 mt-1">Get this from nowpayments.io dashboard</p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Withdrawal Mode</label>
-          <div className="flex gap-4">
-            <button
-              onClick={() => setPaymentSettings({...paymentSettings!, withdrawalMode: 'manual'})}
-              className={`flex-1 py-3 rounded-lg font-semibold ${
-                paymentSettings?.withdrawalMode === 'manual' ? 'bg-primary text-white' : 'bg-gray-200'
-              }`}
-            >
-              Manual
-            </button>
-            <button
-              onClick={() => setPaymentSettings({...paymentSettings!, withdrawalMode: 'auto'})}
-              className={`flex-1 py-3 rounded-lg font-semibold ${
-                paymentSettings?.withdrawalMode === 'auto' ? 'bg-primary text-white' : 'bg-gray-200'
-              }`}
-            >
-              Automatic
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {paymentSettings?.withdrawalMode === 'auto' 
-              ? 'Donations will be sent to your wallet automatically' 
-              : 'You manually approve each withdrawal'}
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Minimum Withdrawal Amount ($)</label>
-          <input 
-            type="number"
-            value={paymentSettings?.minimumWithdrawal || 50} 
-            onChange={(e) => setPaymentSettings({...paymentSettings!, minimumWithdrawal: parseFloat(e.target.value)})}
-            placeholder="50"
-            className="w-full px-4 py-3 border rounded-lg" 
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            Wait until balance reaches this amount before withdrawing (saves on fees)
-          </p>
-        </div>
-
-        <button 
-          onClick={handleSavePaymentSettings}
-          className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark"
-        >
-          Save Settings
-        </button>
-      </div>
-    </div>
-
-    {/* BALANCE DISPLAY */}
-    <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-      <div className="text-center">
-        <p className="text-gray-600 mb-2">Available Balance</p>
-        <p className="text-5xl font-bold text-green-600 mb-2">${balance}</p>
-        <p className="text-sm text-gray-500">Ready for withdrawal</p>
-      </div>
-    </div>
-
-    {/* WITHDRAW BUTTON */}
-    {cryptoWallet && paymentSettings?.nowpaymentsApiKey ? (
-      <button 
-        onClick={handleWithdraw} 
-        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold text-xl py-6 rounded-lg transition"
-      >
-        Withdraw ${balance} to Sling Wallet
-      </button>
-    ) : (
-      <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 text-center">
-        <p className="text-yellow-800 font-semibold mb-2">⚠️ Setup Required</p>
-        <p className="text-sm text-yellow-700">
-          {!cryptoWallet && 'Add your Sling wallet address. '}
-          {!paymentSettings?.nowpaymentsApiKey && 'Add your NowPayments API key. '}
-        </p>
-      </div>
-    )}
-
-    {/* CRYPTO WALLET FORM MODAL */}
-    {showCryptoWalletForm && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <h3 className="text-2xl font-bold mb-6">{editingCryptoWallet ? 'Edit' : 'Add'} Crypto Wallet</h3>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-blue-800">
-              <strong>💡 Network:</strong> Solana (SOL)<br/>
-              <strong>💡 Currency:</strong> USDC-SPL<br/>
-              <strong>💡 Where to find:</strong> Open Sling app → Crypto → USDC → Copy address
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Wallet Name (Optional)</label>
-              <input 
-                type="text" 
-                value={cryptoWalletForm.walletName} 
-                onChange={(e) => setCryptoWalletForm({...cryptoWalletForm, walletName: e.target.value})}
-                placeholder="Sling USDC Wallet"
-                className="w-full px-4 py-3 border rounded-lg" 
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Wallet Address *</label>
-              <textarea 
-                value={cryptoWalletForm.walletAddress} 
-                onChange={(e) => setCryptoWalletForm({...cryptoWalletForm, walletAddress: e.target.value})}
-                placeholder="ANt2h9i7cRnYjU6xfzHDr3w9Q42ihVZHWXzrY4tkroX"
-                className="w-full px-4 py-3 border rounded-lg font-mono text-sm" 
-                rows={3}
-              />
-              <p className="text-xs text-gray-500 mt-1">Paste your Sling USDC wallet address here</p>
-            </div>
-          </div>
-
-          <div className="flex gap-4 mt-6">
-            <button 
-              onClick={handleSaveCryptoWallet} 
-              className="flex-1 bg-primary text-white py-3 rounded-lg font-semibold"
-            >
-              {editingCryptoWallet ? 'Update' : 'Add'} Wallet
-            </button>
-            <button 
-              onClick={() => { 
-                setShowCryptoWalletForm(false)
-                setEditingCryptoWallet(null)
-                setCryptoWalletForm({ walletAddress: '', walletName: 'Sling USDC Wallet' })
-              }} 
-              className="flex-1 bg-gray-200 py-3 rounded-lg font-semibold"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
   </div>
+
 )}
-                              {/* CAUSES TAB */}
-        {activeTab === 'causes' && (
+
+
           <div>
             <div className="flex justify-between mb-6">
               <h2 className="text-2xl font-bold">Donation Causes</h2>
@@ -1724,7 +1753,131 @@ export default function AdminPage() {
           </div>
         )}
 
+      // ADD THIS TO admin/page.tsx
+
+// 1. ADD TO TAB LIST (around line 970):
+{ id: 'settings', label: '⚙️ Settings' }
+
+// 2. ADD SETTINGS TAB CONTENT (after gallery tab, before closing div):
+
+{activeTab === 'settings' && (
+  <div className="max-w-4xl mx-auto">
+    <h2 className="text-2xl font-bold mb-6">Settings</h2>
+
+    {/* MOONPAY SETTINGS */}
+    <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h3 className="text-xl font-bold mb-6">Payment Settings - MoonPay</h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Public Key {!moonPaySettings?.publicKey && <span className="text-red-600">*</span>}
+          </label>
+          <input 
+            type="text"
+            value={moonPaySettings?.publicKey || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, publicKey: e.target.value})}
+            placeholder="moz~..."
+            className="w-full px-4 py-3 border rounded-lg" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Secret Key {!moonPaySettings?.secretKey && <span className="text-red-600">*</span>}
+          </label>
+          <input 
+            type="password"
+            value={moonPaySettings?.secretKey || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, secretKey: e.target.value})}
+            placeholder="Enter secret key"
+            className="w-full px-4 py-3 border rounded-lg" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Webhook Secret</label>
+          <input 
+            type="password"
+            value={moonPaySettings?.webhookSecret || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, webhookSecret: e.target.value})}
+            placeholder="Enter webhook secret"
+            className="w-full px-4 py-3 border rounded-lg" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Phantom Wallet Address</label>
+          <input 
+            type="text"
+            value={moonPaySettings?.phantomWalletAddress || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, phantomWalletAddress: e.target.value})}
+            placeholder="HCNTPmFk..."
+            className="w-full px-4 py-3 border rounded-lg font-mono text-sm" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Phantom Private Key (Seed Phrase)</label>
+          <textarea 
+            value={moonPaySettings?.phantomPrivateKey || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, phantomPrivateKey: e.target.value})}
+            placeholder="word word word..."
+            className="w-full px-4 py-3 border rounded-lg font-mono text-sm" 
+            rows={3}
+          />
+          <p className="text-xs text-red-600 mt-1">⚠️ Keep this secure - never share</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Sling Wallet Address</label>
+          <input 
+            type="text"
+            value={moonPaySettings?.slingWalletAddress || ''} 
+            onChange={(e) => setMoonPaySettings({...moonPaySettings!, slingWalletAddress: e.target.value})}
+            placeholder="ANt2h9i7c..."
+            className="w-full px-4 py-3 border rounded-lg font-mono text-sm" 
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Auto Transfer to Sling</label>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setMoonPaySettings({...moonPaySettings!, autoTransferEnabled: true})}
+              className={`flex-1 py-3 rounded-lg font-semibold ${
+                moonPaySettings?.autoTransferEnabled ? 'bg-green-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Enabled
+            </button>
+            <button
+              onClick={() => setMoonPaySettings({...moonPaySettings!, autoTransferEnabled: false})}
+              className={`flex-1 py-3 rounded-lg font-semibold ${
+                !moonPaySettings?.autoTransferEnabled ? 'bg-red-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Disabled
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {moonPaySettings?.autoTransferEnabled 
+              ? 'USDC will automatically transfer from Phantom to Sling' 
+              : 'You must manually approve each transfer'}
+          </p>
+        </div>
+
+        <button 
+          onClick={handleSaveMoonPaySettings}
+          className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark"
+        >
+          Save Payment Settings
+        </button>
       </div>
+    </div>
+  </div>
+)}
+</div>
     </div>
   )
 }
