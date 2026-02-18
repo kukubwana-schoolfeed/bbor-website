@@ -334,7 +334,7 @@ const filteredTransactions = transactions.filter(tx => {
 
     const loadAllData = async (token: string) => {
     try {
-      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes, cryptoWalletRes, paymentSettingsRes] = await Promise.all([
+      const [causesRes, newsRes, storiesRes, faqsRes, imagesRes, bankRes, albumsRes, moonPaySettingsRes, transactionsRes] = await Promise.all([
         fetch(API_URL + '/api/causes', { headers: { 'Authorization': 'Bearer ' + token } }),
         fetch(API_URL + '/api/news', { headers: { 'Authorization': 'Bearer ' + token } }),
         fetch(API_URL + '/api/stories', { headers: { 'Authorization': 'Bearer ' + token } }),
@@ -342,8 +342,8 @@ const filteredTransactions = transactions.filter(tx => {
         fetch(API_URL + '/api/images', { headers: { 'Authorization': 'Bearer ' + token } }),
         fetch(API_URL + '/api/bank-accounts', { headers: { 'Authorization': 'Bearer ' + token } }),
         fetch(API_URL + '/api/albums', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch(API_URL + '/api/crypto-wallet', { headers: { 'Authorization': 'Bearer ' + token } }),
-        fetch(API_URL + '/api/payment-settings', { headers: { 'Authorization': 'Bearer ' + token } })
+        fetch(API_URL + '/api/moonpay/settings', { headers: { 'Authorization': 'Bearer ' + token } }),
+        fetch(API_URL + '/api/moonpay/transactions', { headers: { 'Authorization': 'Bearer ' + token } })
       ])
 
       if (causesRes.ok) setCauses(await causesRes.json())
@@ -354,13 +354,13 @@ const filteredTransactions = transactions.filter(tx => {
       if (bankRes.ok) setBankAccounts(await bankRes.json())
       if (albumsRes.ok) setAlbums(await albumsRes.json())
       
-      if (cryptoWalletRes.ok) {
-        const data = await cryptoWalletRes.json()
-        setCryptoWallet(data)
+      if (moonPaySettingsRes.ok) {
+        const data = await moonPaySettingsRes.json()
+        setMoonPaySettings(data)
       }
-      if (paymentSettingsRes.ok) {
-        const data = await paymentSettingsRes.json()
-        setPaymentSettings(data)
+      if (transactionsRes.ok) {
+        const data = await transactionsRes.json()
+        setTransactions(data)
       }
     } catch (error) {
       console.error('Failed to load data:', error)
