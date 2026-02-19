@@ -1179,8 +1179,7 @@ const handleSaveMoonPaySettings = async () => {
           </div>
         )}
 
-        {activeTab === 'news' && (
-          <div>
+        {activeTab === 'news' && (   <div>
             <div className="flex justify-between mb-6">
               <h2 className="text-2xl font-bold">News Articles</h2>
               <button onClick={() => { setShowNewsForm(true); setEditingNews(null); setNewsForm({ title: '', description: '', date: new Date().toISOString().split('T')[0], imageUrl: '', icon: '📰', displayType: 'none', status: 'Published' }) }}
