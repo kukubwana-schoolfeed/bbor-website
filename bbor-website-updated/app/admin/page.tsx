@@ -1067,7 +1067,7 @@ const handleSaveMoonPaySettings = async () => {
 
 )}
 
-
+        {activeTab === 'causes' && (
           <div>
             <div className="flex justify-between mb-6">
               <h2 className="text-2xl font-bold">Donation Causes</h2>
