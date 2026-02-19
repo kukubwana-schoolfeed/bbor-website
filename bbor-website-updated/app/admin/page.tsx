@@ -812,20 +812,6 @@ const handleSaveMoonPaySettings = async () => {
       alert('Failed to save settings')
     }
   }
-```
-
----
-
-## CHANGE 2: ADD SETTINGS TAB
-
-**PRESS CTRL+END** (go to bottom of file)
-
-**SCROLL UP until you see:**
-```
-      </div>
-    </div>
-  )
-}
 
   if (isLoading) {
     return (
