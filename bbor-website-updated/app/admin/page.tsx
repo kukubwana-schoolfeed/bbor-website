@@ -1646,7 +1646,26 @@ const handleSaveMoonPaySettings = async () => {
           </div>
         )}
 
+        {activeTab === 'settings' && (
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6">Settings</h2>
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-xl font-bold mb-6">Payment Settings - MoonPay</h3>
+              <div className="space-y-4">
+                <input type="text" value={moonPaySettings?.publicKey || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, publicKey: e.target.value})} placeholder="Public Key" className="w-full px-4 py-3 border rounded-lg" />
+                <input type="password" value={moonPaySettings?.secretKey || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, secretKey: e.target.value})} placeholder="Secret Key" className="w-full px-4 py-3 border rounded-lg" />
+                <input type="password" value={moonPaySettings?.webhookSecret || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, webhookSecret: e.target.value})} placeholder="Webhook Secret" className="w-full px-4 py-3 border rounded-lg" />
+                <input type="text" value={moonPaySettings?.phantomWalletAddress || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, phantomWalletAddress: e.target.value})} placeholder="Phantom Wallet Address" className="w-full px-4 py-3 border rounded-lg font-mono text-sm" />
+                <textarea value={moonPaySettings?.phantomPrivateKey || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, phantomPrivateKey: e.target.value})} placeholder="Phantom Private Key (seed phrase)" className="w-full px-4 py-3 border rounded-lg font-mono text-sm" rows={3} />
+                <input type="text" value={moonPaySettings?.slingWalletAddress || ''} onChange={(e) => setMoonPaySettings({...moonPaySettings, slingWalletAddress: e.target.value})} placeholder="Sling Wallet Address" className="w-full px-4 py-3 border rounded-lg font-mono text-sm" />
+                <button onClick={handleSaveMoonPaySettings} className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary-dark">Save Payment Settings</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
 }
+
