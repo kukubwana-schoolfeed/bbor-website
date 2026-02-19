@@ -110,7 +110,7 @@ export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'causes' | 'news' | 'stories' | 'faqs' | 'images' | 'withdraw' | 'gallery'>('dashboard')
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'causes' | 'news' | 'stories' | 'faqs' | 'images' | 'withdraw' | 'gallery' | 'settings'>('dashboard')
   
   const [balance, setBalance] = useState(500)
   const [causes, setCauses] = useState<Cause[]>([])
